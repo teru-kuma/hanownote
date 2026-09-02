@@ -162,6 +162,14 @@ table.tally td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:
 .tagbox .chip.safe{opacity:.55;text-decoration:line-through}
 .moreTags{border:none;background:transparent;color:var(--pack);font:inherit;
   font-size:13px;padding:6px 2px;cursor:pointer;text-align:left}
+.ingHits{margin:6px 0 2px;font-size:13px;line-height:1.9}
+.ingHits .h{color:var(--muted);margin-right:2px}
+.ingHits button{border:1px solid var(--pack);background:var(--pack-soft);color:var(--pack);
+  border-radius:99px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer;margin:0 5px 5px 0}
+.ingHits button.on{background:var(--pack);color:#fff}
+.ingHits button.all{border-style:dashed;background:transparent}
+.ingHits .contam{display:block;color:var(--rash);font-size:12px;margin-top:3px;line-height:1.6}
+.ingHits .cap{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.6}
 
 /* 編集シート */
 .sheet .field{margin-top:12px}
@@ -237,6 +245,9 @@ tr.safeTag td{opacity:.5}
     <div class="block">
       <div class="lbl">製品名</div>
       <input type="text" id="fProduct" placeholder="例：〇〇のチーズかまぼこ" autocomplete="off">
+      <div class="row"><span class="lbl" style="min-width:0">原材料表示から取り込む</span></div>
+      <textarea id="fIngText" rows="2" placeholder="写真アプリで表示の文字をコピーして貼り付け（Googleレンズ／iPhoneは長押し）。「一部に小麦・卵・乳成分を含む」など"></textarea>
+      <div id="ingHits" class="ingHits hide"></div>
       <div class="row"><span class="lbl" style="min-width:0">気になる食材</span></div>
       <div class="tagbox" id="tagBox"></div>
       <input type="text" id="fTagFree" placeholder="ほかにあれば入力して確定" autocomplete="off">
@@ -289,7 +300,7 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const APP_BUILD   = "2026-09-03";
 
 /* ============ 共通 ============ */
@@ -329,6 +340,82 @@ const TAG_ALIAS = {"たまご":"卵","タマゴ":"卵","玉子":"卵","エッグ
 function normTag(t){
   const x=String(t).trim();
   return TAG_ALIAS[x] || x;
+}
+
+/* ============ 原材料表示の読み取り ============ */
+/* 表示の文言 → アプリの食材タグ。長い語ほど先に当てたいので各行は長い順に並べる */
+const LABEL_MAP = [
+  ["卵",   ["鶏卵","液卵","卵黄","卵白","たまご","タマゴ","玉子","マヨネーズ","エッグ","卵"]],
+  ["乳",   ["脱脂粉乳","全粉乳","調製粉乳","乳たんぱく","乳タンパク","乳固形分","乳清","ホエイパウダー","ホエイ","ホエー","カゼインナトリウム","カゼイン","バターミルク","バターオイル","加糖練乳","れん乳","練乳","生クリーム","乳成分","乳製品","乳糖","ミルク","牛乳","ぎゅうにゅう","バター","チーズ","ヨーグルト","クリーム","乳"]],
+  ["小麦", ["小麦たんぱく","小麦グルテン","小麦粉","強力粉","薄力粉","中力粉","デュラムセモリナ","こむぎ","パン粉","小麦"]],
+  ["そば", ["そば粉","蕎麦","ソバ","そば"]],
+  ["落花生",["ピーナッツバター","ピーナッツオイル","ピーナッツ","ピーナツ","落花生"]],
+  ["えび", ["干しえび","小えび","エビ","海老","おきあみ","オキアミ","えび"]],
+  ["かに", ["ずわいがに","たらばがに","かに風味","カニ","蟹","かに"]],
+  ["くるみ",["クルミ","胡桃","くるみ"]],
+  ["大豆", ["分離大豆たんぱく","大豆たんぱく","大豆タンパク","脱脂大豆","大豆油","だいず","豆乳","豆腐","おから","納豆","きな粉","きなこ","しょうゆ","醤油","みそ","味噌","大豆"]],
+  ["ごま", ["すりごま","練りごま","ねりごま","ごま油","胡麻","ゴマ","ごま"]],
+  ["アーモンド",["アーモンドプードル","アーモンドミルク","アーモンド"]],
+  ["カシューナッツ",["カシューナッツ","カシュー"]],
+  ["キウイ",["キウイフルーツ","キウイ"]],
+  ["もも", ["白桃","黄桃","ピーチ","もも","モモ","桃"]],
+  ["りんご",["りんご果汁","アップル","リンゴ","林檎","りんご"]],
+  ["バナナ",["バナナ"]],
+  ["やまいも",["やまいも","山芋","やまのいも","長いも","ながいも","大和芋"]],
+  ["ゼラチン",["ゼラチン"]],
+  ["さかな",["かつお節","かつおぶし","かつおエキス","煮干し","にぼし","魚醤","魚介エキス","魚介類","魚肉","魚介","さけ","鮭","さば","まぐろ","かつお","いわし","あじ","たら","いくら","たらこ","かまぼこ","ちくわ","はんぺん","魚"]],
+  ["肉",   ["牛肉","豚肉","鶏肉","ぶた肉","とり肉","チキンエキス","ポークエキス","ビーフエキス","チキンパウダー","ソーセージ","ベーコン","ラード","ビーフ","ポーク","チキン","ハム"]],
+];
+/* 「同じ設備で製造」等（コンタミ表記）。当たったら候補に入れず注意だけ出す */
+const CONTAM_RE = /同一の(?:製造)?ライン|同じ(?:製造)?ライン|共通の(?:製造)?ライン|同一の(?:製造)?設備|同じ設備|共通の設備|同じ工場|を含む製品を(?:製造|生産)|入った製品を(?:製造|生産)|(?:製造|生産)ライン(?:で|上で)/;
+/* 直後にこれが続いたら「入っていない」表記とみなして拾わない */
+const NEG_RE = /^\s*(?:は|を|が|も|、)?\s*(?:不使用|不添加|フリー|は?使用してい?ま?せん|は?使っていま?せん|は?入っていま?せん|は?含(?:み|ま)ま?せん)/;
+
+function scanIngredients(text){
+  const t = String(text||"");
+  const out = {hits:[], contam:[], contamNote:false};
+  if(t.replace(/\s/g,"").length < 2) return out;
+  out.contamNote = CONTAM_RE.test(t);
+  const hit = new Set(), con = new Set();
+  for(const [tag, terms] of LABEL_MAP){
+    for(const term of terms){
+      let i = t.indexOf(term);
+      if(i === -1) continue;
+      while(i !== -1){
+        const after = t.slice(i + term.length, i + term.length + 12);
+        if(!NEG_RE.test(after)){
+          let s = 0;
+          for(const ch of ["。","\n","／","/"]){ const p = t.lastIndexOf(ch, i - 1); if(p + 1 > s) s = p + 1; }
+          let e = t.length;
+          for(const ch of ["。","\n","／","/"]){ const p = t.indexOf(ch, i); if(p !== -1 && p < e) e = p; }
+          (CONTAM_RE.test(t.slice(s, e)) ? con : hit).add(tag);
+        }
+        i = t.indexOf(term, i + term.length);
+      }
+      break; // このタグは確定。ほかの語は見なくてよい
+    }
+  }
+  for(const tag of hit) con.delete(tag);
+  out.hits = [...hit]; out.contam = [...con];
+  return out;
+}
+
+function renderIngHits(){
+  const box = $("#ingHits");
+  const {hits, contam, contamNote} = scanIngredients($("#fIngText").value);
+  if(!hits.length && !contam.length && !contamNote){ box.className = "ingHits hide"; box.innerHTML = ""; return; }
+  box.className = "ingHits";
+  let html = "";
+  if(hits.length){
+    html += `<span class="h">表示から：</span>` +
+      hits.map(t => `<button type="button" data-t="${esc(t)}" class="${selTags.has(t) ? "on" : ""}">${selTags.has(t) ? "✓ " : ""}${esc(t)}</button>`).join("");
+    if(hits.some(t => !selTags.has(t))) html += `<button type="button" class="all" data-all="1">ぜんぶ入れる</button>`;
+  }
+  if(contam.length || contamNote){
+    html += `<span class="contam">※「同じ設備で製造」などの記載があります${contam.length ? "（" + contam.join("・") + "）" : ""}。候補には入れていません。</span>`;
+  }
+  html += `<span class="cap">入っていても表示に出ないことがあります。写真の表示をそのまま確認してください。</span>`;
+  box.innerHTML = html;
 }
 
 /* ============ 状態 ============ */
@@ -589,11 +676,11 @@ function saveDraft(){
     try{
       const empty = !draft.rash.length && !draft.pack.length && !draft.ing.length
         && !selTags.size && !areas.size && !sev
-        && !$("#fProduct").value.trim() && !$("#fNote").value.trim();
+        && !$("#fProduct").value.trim() && !$("#fNote").value.trim() && !$("#fIngText").value.trim();
       if(empty){ await idbReq(st("meta","readwrite").delete("draft")); return; }
       await idbReq(st("meta","readwrite").put({k:"draft", v:{
         at:Date.now(), ateMin, sev, areas:[...areas], tags:[...selTags],
-        product:$("#fProduct").value, note:$("#fNote").value,
+        product:$("#fProduct").value, note:$("#fNote").value, ingText:$("#fIngText").value,
         photos:{rash:draft.rash,pack:draft.pack,ing:draft.ing}
       }}));
     }catch(e){}
@@ -612,6 +699,7 @@ async function restoreDraft(){
   ateMin=v.ateMin||0; sev=v.sev||0;
   areas=new Set(v.areas||[]); selTags=new Set(v.tags||[]);
   $("#fProduct").value=v.product||""; $("#fNote").value=v.note||"";
+  $("#fIngText").value=v.ingText||""; renderIngHits();
   [...$("#ateChips").children].forEach(c=>c.setAttribute("aria-pressed", (+c.dataset.min===ateMin)?"true":"false"));
   [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-pressed", areas.has(c.textContent)?"true":"false"));
   [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-pressed", (+c.dataset.sev===sev)?"true":"false"));
@@ -621,7 +709,7 @@ async function restoreDraft(){
   bar.innerHTML=`<span>書きかけの記録を戻しました（写真${n}枚・${fmtShort(new Date(v.at))}）</span>
     <button id="dDrop">捨てる</button>`;
   $("#dDrop").onclick=async ()=>{ await clearDraft(); resetDraft(); bar.classList.add("hide"); toast("書きかけを捨てました"); };
-  if(document.querySelector("details.more")) document.querySelector("details.more").open = !!(v.product||v.note||selTags.size);
+  if(document.querySelector("details.more")) document.querySelector("details.more").open = !!(v.product||v.note||v.ingText||selTags.size);
 }
 
 /* ============ 保存 ============ */
@@ -650,6 +738,7 @@ function resetDraft(){
   draft.rash=[];draft.pack=[];draft.ing=[];
   ateMin=0;areas.clear();sev=0;selTags.clear();
   $("#fProduct").value="";$("#fTagFree").value="";$("#fNote").value="";
+  $("#fIngText").value=""; $("#ingHits").className="ingHits hide"; $("#ingHits").innerHTML="";
   paintTagBox();
   [...$("#ateChips").children].forEach((c,i)=>c.setAttribute("aria-pressed",i===0?"true":"false"));
   [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-pressed","false"));
@@ -1309,6 +1398,15 @@ function checkBackupNudge(){
 
 $("#fProduct").addEventListener("input", saveDraft);
 $("#fNote").addEventListener("input", saveDraft);
+
+$("#fIngText").addEventListener("input", ()=>{ renderIngHits(); saveDraft(); });
+$("#ingHits").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  const {hits}=scanIngredients($("#fIngText").value);
+  if(b.dataset.all){ hits.forEach(t=>selTags.add(t)); }
+  else if(b.dataset.t){ const t=b.dataset.t; selTags.has(t)?selTags.delete(t):selTags.add(t); }
+  paintTagBox(); renderIngHits(); saveDraft();
+});
 
 $("#fDevName").addEventListener("change", async ()=>{
   meta.deviceName=$("#fDevName").value.trim().slice(0,12);
