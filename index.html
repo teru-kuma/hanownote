@@ -8,7 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <style>
 :root{
-  --bg:#E9ECEA; --card:#FFFFFF; --ink:#17201D; --muted:#65726D; --line:#D2D8D5;
+  --bg:#E9ECEA; --card:#FFFFFF; --ink:#17201D; --ink2:#3D4A45; --muted:#65726D; --line:#D2D8D5;
   --rash:#B3403A; --rash-soft:#F6E7E5; --pack:#2E5E7E; --pack-soft:#E4EDF3;
   --r:10px;
 }
@@ -16,7 +16,7 @@
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);
   font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
-  font-size:16px;line-height:1.55;padding-bottom:96px}
+  font-size:16px;line-height:1.55;padding-bottom:132px}
 .wrap{max-width:560px;margin:0 auto;padding:14px 14px 0}
 header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
 h1{font-size:17px;font-weight:700;margin:0;letter-spacing:.02em;display:flex;align-items:baseline;gap:7px}
@@ -24,57 +24,106 @@ h1{font-size:17px;font-weight:700;margin:0;letter-spacing:.02em;display:flex;ali
   border:1px solid var(--line);border-radius:6px;padding:1px 6px;cursor:pointer;
   font-variant-numeric:tabular-nums;line-height:1.3}
 #verBadge.stale{color:var(--pack);border-color:var(--pack)}
-#now{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+#now{font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums;text-align:right;line-height:1.4}
+#now b{display:block;font-size:13px;font-weight:700;color:var(--ink)}
 
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tile{position:relative;border:none;border-radius:var(--r);padding:0;background:var(--card);
-  color:inherit;font:inherit;cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:6px;overflow:hidden}
-.tile.rash{grid-column:1/-1;min-height:148px;background:var(--rash-soft);border:1.5px solid var(--rash)}
-.tile.pack{min-height:104px;background:var(--pack-soft);border:1.5px solid var(--pack)}
-.tile.ing{min-height:104px;background:var(--pack-soft);border:1.5px dashed var(--pack)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+.tile{border-radius:var(--r);background:var(--card);display:flex;flex-direction:column;overflow:hidden}
+.tile.rash{grid-column:1/-1;background:var(--rash-soft);border:1.5px solid var(--rash)}
+.tile.pack{background:var(--pack-soft);border:1.5px solid var(--pack)}
+.tile.ing{background:var(--pack-soft);border:1.5px dashed var(--pack)}
+.tile .thead{display:flex;align-items:center;gap:7px;padding:9px 11px 0}
+.tile .icon{font-size:20px;line-height:1}
 .tile .t{font-size:15px;font-weight:700}
-.tile.rash .t{font-size:18px;color:var(--rash)}
+.tile.rash .t{font-size:17px;color:var(--rash)}
 .tile.pack .t,.tile.ing .t{color:var(--pack)}
-.tile .s{font-size:12px;color:var(--muted);padding:0 8px;text-align:center}
-.tile .icon{font-size:26px;line-height:1}
-.albumBtn{position:absolute;top:6px;right:6px;z-index:3;background:#ffffffe8;
-  border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12px;
-  cursor:pointer;font-family:inherit;color:var(--ink);line-height:1}
-.tile{outline-offset:2px}
-.strip{position:absolute;inset:0;display:flex;gap:2px;padding:2px;background:#0000000d}
-.strip img{flex:1 1 0;min-width:0;height:100%;object-fit:cover;border-radius:6px}
-.count{position:absolute;right:6px;bottom:6px;background:#17201Dcc;color:#fff;
-  font-size:12px;padding:2px 8px;border-radius:99px;font-variant-numeric:tabular-nums}
+.tile .n{margin-left:auto;font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.tile .s{margin:0;font-size:12px;color:var(--ink2);padding:2px 11px 0;line-height:1.5}
+.tile .shelf{display:flex;gap:6px;padding:9px 11px;overflow-x:auto}
+.tile .ph{position:relative;flex:0 0 auto}
+.tile .ph img{width:52px;height:52px;object-fit:cover;border-radius:8px;display:block;background:#fff}
+.tile.rash .ph img{width:60px;height:60px}
+.tile .ph .x{position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:99px;
+  background:#17201Dd6;color:#fff;border:none;font-size:13px;line-height:1;cursor:pointer;
+  padding:0;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.tile .shoot{flex:1 0 auto;min-height:52px;border-radius:8px;background:#fff;cursor:pointer;
+  font:inherit;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.tile.rash .shoot{border:1.5px solid var(--rash);color:var(--rash);min-height:60px;font-size:16px}
+.tile.pack .shoot,.tile.ing .shoot{border:1.5px solid var(--pack);color:var(--pack)}
+.tile .shoot.sq{flex:0 0 auto;width:52px;min-height:52px;font-size:22px}
+.tile.rash .shoot.sq{width:60px;min-height:60px}
+.albumBtn{border:none;border-top:1px solid #0000001f;background:#ffffffb0;width:100%;
+  min-height:44px;font:inherit;font-size:13.5px;cursor:pointer;color:var(--pack)}
+.tile.rash .albumBtn{color:var(--rash)}
 
 .block{background:var(--card);border-radius:var(--r);padding:12px;margin-top:8px;border:1px solid var(--line)}
-.lbl{font-size:13px;color:var(--muted);margin-bottom:6px}
+.lbl{font-size:13px;color:var(--ink2);margin-bottom:6px}
+.flab{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 8px;margin:14px 0 6px}
+.flab:first-child{margin-top:0}
+.flab b{font-size:14px;font-weight:700}
+.rulehint{font-size:11px;color:#fff;background:var(--muted);border-radius:99px;padding:2px 9px;line-height:1.5}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 13px;
-  font-size:14px;color:var(--ink);cursor:pointer;font-family:inherit}
-.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
-.chip.sev[aria-pressed="true"]{background:var(--rash);border-color:var(--rash)}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--line);background:#fff;
+  border-radius:99px;padding:0 14px;min-height:44px;font-size:14px;color:var(--ink);
+  cursor:pointer;font-family:inherit}
+/* 1つだけ選ぶもの＝連結した帯 */
+.seg{display:flex;border:1px solid #C4CCC8;border-radius:9px;overflow:hidden;background:#fff}
+.seg button{flex:1;border:none;border-right:1px solid #E0E5E2;background:transparent;font:inherit;
+  font-size:13.5px;color:var(--ink2);padding:11px 2px;min-height:44px;cursor:pointer}
+.seg button:last-child{border-right:none}
+.seg button[aria-checked="true"]{background:var(--ink);color:#fff;font-weight:700}
+.seg.sv button[aria-checked="true"]{background:var(--rash)}
+/* いくつでも選べるもの＝四角＋チェック */
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.checks button{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);
+  background:#fff;border-radius:8px;padding:0 12px;min-height:44px;font:inherit;font-size:14px;
+  color:var(--ink);cursor:pointer}
+.checks button::before{content:"";width:17px;height:17px;border-radius:4px;
+  border:1.5px solid #B7C0BB;background:#fff;flex:0 0 auto}
+.checks button[aria-checked="true"]{background:var(--pack-soft);border-color:var(--pack);
+  color:#1F4459;font-weight:700}
+.checks button[aria-checked="true"]::before{content:"\2713";background:var(--pack);border-color:var(--pack);
+  color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
 input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;
   font:inherit;color:var(--ink);background:#fff}
 textarea{resize:vertical;min-height:60px}
 .row{display:flex;gap:8px;align-items:center;margin-top:8px}
 .row .lbl{margin:0;min-width:74px}
-details.more>summary,details.sync>summary{list-style:none;cursor:pointer;font-size:14px;color:var(--pack);padding:9px 0}
+details.more>summary,details.sync>summary{list-style:none;cursor:pointer;display:flex;align-items:center;
+  gap:9px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:11px 12px;min-height:44px;font-size:14px;font-weight:700;color:var(--ink)}
 details.more>summary::-webkit-details-marker,details.sync>summary::-webkit-details-marker{display:none}
-details.more{margin-top:8px}
+details>summary .sm{font-weight:400;font-size:12px;color:var(--ink2)}
+details>summary .tail{margin-left:auto;flex:0 0 auto;display:flex;align-items:center;gap:8px}
+details>summary .badge{background:var(--pack-soft);color:#1F4459;border-radius:99px;
+  font-size:11px;padding:2px 9px;font-weight:700}
+details>summary .chev{color:var(--muted);font-size:12px;transition:transform .15s}
+details[open]>summary .chev{transform:rotate(180deg)}
+details[open]>summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+details[open]>.block{margin-top:-1px;border-top-left-radius:0;border-top-right-radius:0}
+details.more,details.sync{margin-top:8px}
 
 .savebar{position:fixed;left:0;right:0;bottom:0;z-index:20;
-  background:linear-gradient(to top,var(--bg) 72%,#e9eceac0);
+  background:linear-gradient(to top,var(--bg) 80%,#e9eceac0);
   padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
-.savebar .inner{max-width:560px;margin:0 auto;display:flex;gap:8px}
-button.save{flex:1;border:none;border-radius:var(--r);background:var(--ink);color:#fff;
-  font:inherit;font-size:17px;font-weight:700;padding:15px;cursor:pointer}
-button.save:disabled{background:#B4BCB8;color:#F2F4F3}
+.savebar .inner{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:7px}
+.saveHint{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+  border-radius:8px;padding:8px 11px;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.saveHint b{color:var(--rash);font-weight:700;flex:0 0 auto}
+button.save{border:none;border-radius:var(--r);background:var(--ink);color:#fff;
+  font:inherit;font-size:17px;font-weight:700;padding:13px;cursor:pointer;line-height:1.35}
+button.save .sub{display:block;font-size:11.5px;font-weight:400;color:#B9C3BE;margin-top:3px;
+  font-variant-numeric:tabular-nums}
+button.save:disabled{background:#67736E;color:#fff;cursor:default}
+button.save:disabled .sub{color:#E4E8E6}
 
-nav.tabs{display:flex;gap:4px;margin:18px 0 8px}
-nav.tabs button{flex:1;border:none;background:transparent;font:inherit;font-size:14px;
-  padding:9px;border-radius:8px;color:var(--muted);cursor:pointer}
-nav.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);font-weight:700;border:1px solid var(--line)}
+nav.tabs{display:flex;margin:18px 0 8px;border:1px solid #C4CCC8;border-radius:9px;
+  overflow:hidden;background:#fff}
+nav.tabs button{flex:1;border:none;border-right:1px solid #E0E5E2;background:transparent;font:inherit;
+  font-size:14px;padding:11px 6px;min-height:44px;color:var(--ink2);cursor:pointer}
+nav.tabs button:last-child{border-right:none}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:#fff;font-weight:700}
+nav.tabs .tn{font-size:12px;font-weight:400;opacity:.85;margin-left:5px;font-variant-numeric:tabular-nums}
 
 .rec{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
 .rec>summary{list-style:none;cursor:pointer;display:flex;gap:10px;padding:10px;align-items:center}
@@ -82,7 +131,7 @@ nav.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);fo
 .rec .thumb{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--rash-soft);flex:0 0 auto}
 .rec .meta{min-width:0;flex:1}
 .rec .when{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
-.rec .sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rec .sub{font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .rec .body{padding:0 10px 12px;border-top:1px solid var(--line)}
 .rec .from{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px;margin-left:6px}
 .gal{display:flex;gap:6px;overflow-x:auto;padding:10px 0}
@@ -90,9 +139,23 @@ nav.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);fo
 .gal img{width:112px;height:112px;object-fit:cover;border-radius:8px;display:block;background:#eee}
 .gal figcaption{font-size:11px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
 .kv{font-size:14px;margin:2px 0}
-.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.acts button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
-.acts button.del{color:var(--rash);border-color:#E7C7C4}
+.acts{display:flex;gap:7px;margin-top:10px;align-items:stretch}
+.acts button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:0 10px;
+  font:inherit;font-size:13.5px;cursor:pointer;min-height:44px;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;gap:5px}
+.acts button.pri{flex:1;background:var(--pack);color:#fff;border-color:var(--pack);font-weight:700}
+.acts button.sec{flex:1}
+.acts button.kebab{flex:0 0 44px;color:var(--muted);font-size:18px;padding:0}
+/* 記録カードに写真を足すシート */
+.addGrid{display:flex;flex-direction:column;gap:8px}
+.addRow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:9px;padding:8px 10px}
+.addRow .k{flex:1;font-size:14px;font-weight:700;min-width:0}
+.addRow button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:0 13px;
+  min-height:44px;font:inherit;font-size:13px;cursor:pointer;color:var(--pack);white-space:nowrap}
+.addRow button.cam{background:var(--pack);color:#fff;border-color:var(--pack);font-weight:700}
+.danger{border:1px solid #E7C7C4;background:#FFF3F1;color:#8A2F2A;border-radius:8px;
+  padding:10px 12px;font-size:13px;line-height:1.7;margin-bottom:12px}
 .tag{display:inline-block;background:#EFF2F0;border-radius:6px;padding:2px 7px;font-size:12px;margin:2px 3px 0 0}
 
 table.tally{width:100%;border-collapse:collapse;font-size:14px}
@@ -100,12 +163,12 @@ table.tally th,table.tally td{text-align:left;padding:8px 6px;border-bottom:1px 
 table.tally td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;width:56px}
 .bar{height:6px;background:var(--rash);border-radius:3px}
 
-.empty{color:var(--muted);font-size:14px;padding:22px 4px;line-height:1.7}
+.empty{color:var(--ink2);font-size:14px;padding:22px 4px;line-height:1.7}
 .note{font-size:12px;color:var(--muted);margin:14px 0 24px;line-height:1.7}
 .warn{background:#FFF3F1;border:1px solid #E7C7C4;color:#8A2F2A;padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px}
 .info{background:var(--pack-soft);border:1px solid #BBD3E1;color:#1F4459;padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px}
 .hide{display:none !important}
-.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:var(--ink);color:#fff;
+.toast{position:fixed;left:50%;bottom:124px;transform:translateX(-50%);background:var(--ink);color:#fff;
   padding:10px 18px;border-radius:99px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:88%;text-align:center}
 .toast.on{opacity:1}
 .toast.act{pointer-events:auto;display:flex;align-items:center;gap:14px;padding:10px 12px 10px 18px}
@@ -116,32 +179,43 @@ table.tally td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:
   padding:9px 14px;font:inherit;font-size:14px;cursor:pointer}
 .viewer .vdel.arm{background:var(--rash);border-color:var(--rash);color:#fff;font-weight:700}
 
+.syncH{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin:16px 0 5px}
 .syncbtns{display:flex;flex-direction:column;gap:6px;margin-top:4px}
-.syncbtns button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px;font:inherit;font-size:15px;cursor:pointer;text-align:left}
+.syncbtns button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:11px 12px;
+  font:inherit;font-size:15px;cursor:pointer;text-align:left;min-height:44px;color:var(--ink)}
 .syncbtns button.primary{background:var(--pack);color:#fff;border-color:var(--pack);font-weight:700}
+.syncbtns button .bs{display:block;font-size:11.5px;font-weight:400;color:var(--ink2);margin-top:2px;line-height:1.5}
+.syncbtns button.primary .bs{color:#D7E5EF}
+.syncNote{font-size:12px;color:var(--ink2);line-height:1.7;margin:8px 0 0}
+.syncNote b{color:var(--rash)}
+.syncHr{border:none;border-top:1px solid var(--line);margin:16px 0 0}
 .stat{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;font-variant-numeric:tabular-nums}
 
 .modal{position:fixed;inset:0;background:#17201Db3;z-index:50;display:flex;align-items:flex-end;justify-content:center}
-.modal .sheet{background:var(--bg);border-radius:14px 14px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+.modal .grab{width:38px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
+.modal .sheet{background:var(--bg);border-radius:14px 14px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom));
   width:100%;max-width:560px;max-height:86vh;overflow:auto}
 .modal h2{font-size:16px;margin:0 0 10px}
 .modal .mrow{display:flex;justify-content:space-between;font-size:15px;padding:7px 2px;border-bottom:1px solid var(--line)}
 .modal .mrow b{font-variant-numeric:tabular-nums}
 .modal .mbtns{display:flex;gap:8px;margin-top:14px}
-.modal .mbtns button{flex:1;border-radius:var(--r);padding:14px;font:inherit;font-size:16px;cursor:pointer;border:1px solid var(--line);background:#fff}
+.modal .mbtns button{flex:1;border-radius:var(--r);padding:14px;min-height:48px;font:inherit;font-size:16px;
+  cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.modal .mbtns button.danger{background:var(--rash);border-color:var(--rash);color:#fff;font-weight:700;margin-bottom:0}
 .modal .mbtns button.go{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700}
 
 /* 直近サマリー・フォローアップ */
 .summary{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-  padding:10px 12px;font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:8px}
+  padding:10px 12px;font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:8px}
 .summary b{color:var(--ink);font-weight:700}
 .followup{display:flex;gap:8px;align-items:center;background:var(--rash-soft);
   border:1px solid #E7C7C4;border-radius:var(--r);padding:10px 12px;font-size:13px;
   color:#8A2F2A;margin-bottom:8px;line-height:1.6}
+.followup{flex-wrap:wrap}
 .followup .fbtns{margin-left:auto;display:flex;gap:6px;flex:0 0 auto}
 .followup button{border:1px solid #E0BCB8;background:#fff;border-radius:8px;
-  padding:7px 10px;font:inherit;font-size:13px;cursor:pointer;color:var(--rash);white-space:nowrap}
-.followup button.x{color:var(--muted);border-color:var(--line)}
+  padding:0 12px;min-height:40px;font:inherit;font-size:13px;cursor:pointer;color:var(--rash);white-space:nowrap}
+.followup button.x{color:var(--ink2);border-color:var(--line)}
 
 /* 写真ビューア */
 .viewer{position:fixed;inset:0;background:#0E1413f2;z-index:70;display:flex;
@@ -150,7 +224,11 @@ table.tally td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:
 .viewer .vcap{color:#E6EBE9;font-size:14px;margin-top:12px;font-variant-numeric:tabular-nums;text-align:center}
 .viewer .vnav{display:flex;gap:10px;margin-top:14px}
 .viewer .vnav button{border:1px solid #ffffff40;background:#ffffff14;color:#fff;
-  border-radius:8px;padding:11px 18px;font:inherit;font-size:15px;cursor:pointer}
+  border-radius:8px;padding:11px 18px;min-height:44px;font:inherit;font-size:15px;cursor:pointer}
+.viewer .vnav button:disabled{opacity:.28;border-color:#ffffff1a;cursor:default}
+.viewer .vdots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px;max-width:80vw}
+.viewer .vdots i{width:7px;height:7px;border-radius:99px;background:#ffffff45}
+.viewer .vdots i.on{background:#fff}
 .viewer .vclose{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;
   border:none;background:#ffffff1f;color:#fff;border-radius:99px;
   width:42px;height:42px;font-size:20px;cursor:pointer;line-height:1}
@@ -158,10 +236,13 @@ table.tally td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:
 
 /* 食材チップ */
 .tagbox{margin-top:4px}
-.tagbox .chip.on{background:var(--pack);color:#fff;border-color:var(--pack)}
-.tagbox .chip.safe{opacity:.55;text-decoration:line-through}
-.moreTags{border:none;background:transparent;color:var(--pack);font:inherit;
-  font-size:13px;padding:6px 2px;cursor:pointer;text-align:left}
+.tagbox .chip[aria-pressed="true"]{background:var(--pack);color:#fff;border-color:var(--pack)}
+.tagbox .chip .ex{font-size:10px;color:var(--muted);background:#EFF2F0;border-radius:99px;
+  padding:1px 6px;margin-left:6px}
+.tagbox .chip[aria-pressed="true"] .ex{background:#ffffff2e;color:#fff}
+.moreTags{border:1px solid var(--line);background:#fff;color:var(--pack);font:inherit;
+  font-size:13px;padding:0 14px;min-height:44px;border-radius:8px;margin-top:7px;
+  cursor:pointer;text-align:left}
 .ingHits{margin:6px 0 2px;font-size:13px;line-height:1.9}
 .ingHits .h{color:var(--muted);margin-right:2px}
 .ingHits button{border:1px solid var(--pack);background:var(--pack-soft);color:var(--pack);
@@ -177,14 +258,14 @@ table.tally td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:
 .sheet .sheetScroll{max-height:60vh;overflow:auto;padding-right:2px}
 .safeRow{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:14px}
 .safeRow button{border:1px solid var(--line);background:#fff;border-radius:8px;
-  padding:7px 11px;font:inherit;font-size:13px;cursor:pointer}
-.tallyNote{font-size:12px;color:var(--muted);margin:14px 0 6px;line-height:1.7}
+  padding:0 14px;min-height:44px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+.tallyNote{font-size:12.5px;color:var(--ink2);margin:14px 0 6px;line-height:1.7}
 tr.safeTag td{opacity:.5}
 .draftBar{display:flex;align-items:center;gap:8px;background:var(--pack-soft);
   border:1px solid #BBD3E1;color:#1F4459;border-radius:8px;padding:9px 11px;
   font-size:13px;margin-bottom:10px}
 .draftBar button{margin-left:auto;border:1px solid #BBD3E1;background:#fff;
-  border-radius:8px;padding:6px 11px;font:inherit;font-size:13px;cursor:pointer;color:#1F4459}
+  border-radius:8px;padding:0 13px;min-height:40px;font:inherit;font-size:13px;cursor:pointer;color:#1F4459}
 
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 :focus-visible{outline:2px solid var(--pack);outline-offset:2px}
@@ -192,7 +273,7 @@ tr.safeTag td{opacity:.5}
 </head>
 <body>
 <div class="wrap">
-  <header><h1>はんのうノート<button type="button" id="verBadge" aria-label="バージョン情報">v–</button></h1><span id="now"></span></header>
+  <header><h1>はんのうノート<button type="button" id="verBadge" aria-label="バージョン情報">v–</button></h1><span id="now"><span id="nowLbl">いま記録すると</span><b id="nowVal"></b></span></header>
 
   <div id="draftBar" class="draftBar hide"></div>
   <div id="dbwarn" class="warn hide"></div>
@@ -200,48 +281,57 @@ tr.safeTag td{opacity:.5}
   <div id="backupnudge" class="info hide"></div>
 
   <div class="tiles">
-    <div class="tile rash" id="tRash" role="button" tabindex="0" aria-label="症状をカメラでとる">
-      <span class="icon">📷</span><span class="t">症状をとる</span><span class="s">出ている場所がわかるように</span>
-      <button class="albumBtn" data-album="rash" aria-label="症状をアルバムから選ぶ">🖼 アルバム</button></div>
-    <div class="tile pack" id="tPack" role="button" tabindex="0" aria-label="製品をカメラでとる">
-      <span class="icon">🧃</span><span class="t">製品</span><span class="s">パッケージ表面</span>
-      <button class="albumBtn" data-album="pack" aria-label="製品をアルバムから選ぶ">🖼</button></div>
-    <div class="tile ing" id="tIng" role="button" tabindex="0" aria-label="原材料表示をカメラでとる">
-      <span class="icon">🔍</span><span class="t">原材料表示</span><span class="s">裏の成分ラベル</span>
-      <button class="albumBtn" data-album="ing" aria-label="原材料表示をアルバムから選ぶ">🖼</button></div>
+    <section class="tile rash" id="tRash" aria-label="症状の写真">
+      <div class="thead"><span class="icon">📷</span><span class="t">症状</span><span class="n"></span></div>
+      <p class="s">出ている場所がわかるように</p>
+      <div class="shelf"></div>
+      <button type="button" class="albumBtn" data-album="rash">🖼 アルバムから選ぶ</button></section>
+    <section class="tile pack" id="tPack" aria-label="製品の写真">
+      <div class="thead"><span class="icon">🧃</span><span class="t">製品</span><span class="n"></span></div>
+      <p class="s">パッケージ表面</p>
+      <div class="shelf"></div>
+      <button type="button" class="albumBtn" data-album="pack">🖼 アルバムから選ぶ</button></section>
+    <section class="tile ing" id="tIng" aria-label="原材料表示の写真">
+      <div class="thead"><span class="icon">🔍</span><span class="t">原材料表示</span><span class="n"></span></div>
+      <p class="s">裏の成分ラベル</p>
+      <div class="shelf"></div>
+      <button type="button" class="albumBtn" data-album="ing">🖼 アルバムから選ぶ</button></section>
   </div>
 
   <div id="derived" class="info hide"></div>
 
   <div class="block">
-    <div class="lbl">食べたのは</div>
-    <div class="chips" id="ateChips">
-      <button class="chip" data-min="0" aria-pressed="true">たった今</button>
-      <button class="chip" data-min="15">15分前</button>
-      <button class="chip" data-min="30">30分前</button>
-      <button class="chip" data-min="60">1時間前</button>
-      <button class="chip" data-min="120">2時間前</button>
+    <div class="flab"><b>食べたのは</b><span class="rulehint">1つだけ</span></div>
+    <div class="seg" id="ateChips" role="radiogroup" aria-label="食べたのは">
+      <button type="button" role="radio" data-min="0" aria-checked="true">たった今</button>
+      <button type="button" role="radio" data-min="15" aria-checked="false">15分前</button>
+      <button type="button" role="radio" data-min="30" aria-checked="false">30分前</button>
+      <button type="button" role="radio" data-min="60" aria-checked="false">1時間前</button>
+      <button type="button" role="radio" data-min="120" aria-checked="false">2時間前</button>
     </div>
-    <div class="row"><span class="lbl">出た場所</span></div>
-    <div class="chips" id="areaChips">
-      <button class="chip">口の周り</button><button class="chip">くちびる・口の中</button>
-      <button class="chip">ほお・目のまわり</button><button class="chip">手</button>
-      <button class="chip">首</button><button class="chip">おなか・背中</button>
-      <button class="chip">うで</button><button class="chip">あし</button>
-      <button class="chip">ひじ・ひざの内側</button>
+    <div class="flab"><b>出た場所</b><span class="rulehint">あてはまるものぜんぶ</span></div>
+    <div class="checks" id="areaChips" role="group" aria-label="出た場所">
+      <button type="button" role="checkbox" aria-checked="false">口の周り</button>
+      <button type="button" role="checkbox" aria-checked="false">くちびる・口の中</button>
+      <button type="button" role="checkbox" aria-checked="false">ほお・目のまわり</button>
+      <button type="button" role="checkbox" aria-checked="false">手</button>
+      <button type="button" role="checkbox" aria-checked="false">首</button>
+      <button type="button" role="checkbox" aria-checked="false">おなか・背中</button>
+      <button type="button" role="checkbox" aria-checked="false">うで</button>
+      <button type="button" role="checkbox" aria-checked="false">あし</button>
+      <button type="button" role="checkbox" aria-checked="false">ひじ・ひざの内側</button>
     </div>
     <p class="lbl" style="margin:8px 0 0">食べ物が触れていない場所にも出たかどうかが、あとで効いてきます。</p>
-    <div class="row"><span class="lbl">強さ</span>
-      <div class="chips" id="sevChips">
-        <button class="chip sev" data-sev="1">うっすら</button>
-        <button class="chip sev" data-sev="2">はっきり</button>
-        <button class="chip sev" data-sev="3">強い</button>
-      </div>
+    <div class="flab"><b>強さ</b><span class="rulehint">1つだけ・押し直しで解除</span></div>
+    <div class="seg sv" id="sevChips" role="radiogroup" aria-label="強さ">
+      <button type="button" role="radio" data-sev="1" aria-checked="false">うっすら</button>
+      <button type="button" role="radio" data-sev="2" aria-checked="false">はっきり</button>
+      <button type="button" role="radio" data-sev="3" aria-checked="false">強い</button>
     </div>
   </div>
 
   <details class="more">
-    <summary>製品名や食材を書き足す（あとからでもOK）</summary>
+    <summary><span>くわしく書く</span><span class="sm">製品名・食材・メモ（あとからでもOK）</span><span class="tail"><span class="badge hide" id="moreBadge"></span><span class="chev">∨</span></span></summary>
     <div class="block">
       <div class="lbl">製品名</div>
       <input type="text" id="fProduct" placeholder="例：〇〇のチーズかまぼこ" autocomplete="off">
@@ -257,23 +347,32 @@ tr.safeTag td{opacity:.5}
   </details>
 
   <details class="sync" id="syncPane">
-    <summary>共有と書き出し</summary>
+    <summary><span>共有と書き出し</span><span class="sm">2台の端末で渡し合う</span><span class="tail"><span class="badge hide" id="syncBadge"></span><span class="chev">∨</span></span></summary>
     <div class="block">
       <div class="lbl">この端末の名前（相手の画面に出ます）</div>
       <input type="text" id="fDevName" placeholder="パパ" autocomplete="off">
+      <h3 class="syncH">送る</h3>
       <div class="syncbtns">
-        <button id="btnSyncOut" class="primary">同期ファイルを作る（変更ぶんだけ）</button>
+        <button id="btnSyncOut" class="primary">同期ファイルを作る<span class="bs">前回から変わったぶんだけZIPにする</span></button>
         <button id="btnReply" class="hide"></button>
-        <button id="btnSyncIn">同期ファイルを読み込む</button>
-        <button id="btnFull">ぜんぶ書き出す（受診用・バックアップ）</button>
+      </div>
+      <p class="syncNote">できたZIPは<b>ファイルとして</b>送ってください。写真として送ると再圧縮されて壊れます。中身は暗号化していないので送り先に注意。</p>
+      <h3 class="syncH">受け取る</h3>
+      <div class="syncbtns">
+        <button id="btnSyncIn">同期ファイルを読み込む<span class="bs">相手が作ったZIPを選ぶ。取り込む件数を確認してから確定します</span></button>
+      </div>
+      <hr class="syncHr">
+      <h3 class="syncH">受診用・バックアップ</h3>
+      <div class="syncbtns">
+        <button id="btnFull">ぜんぶ書き出す<span class="bs">全記録と写真をZIPに。新しい端末の復元にも使えます</span></button>
       </div>
       <div class="stat" id="stat"></div>
     </div>
   </details>
 
   <nav class="tabs">
-    <button id="tabList" aria-selected="true">記録</button>
-    <button id="tabTally" aria-selected="false">食材の集計</button>
+    <button type="button" id="tabList" aria-selected="true">記録<span class="tn" id="tnList"></span></button>
+    <button type="button" id="tabTally" aria-selected="false">食材の集計<span class="tn" id="tnTally"></span></button>
   </nav>
   <div id="followup"></div>
   <div id="summary" class="summary hide"></div>
@@ -287,7 +386,10 @@ tr.safeTag td{opacity:.5}
   </p>
 </div>
 
-<div class="savebar"><div class="inner"><button class="save" id="btnSave" disabled>保存する</button></div></div>
+<div class="savebar"><div class="inner">
+  <div class="saveHint" id="saveHint"></div>
+  <button class="save" id="btnSave" disabled>保存する<span class="sub" id="saveSub"></span></button>
+</div></div>
 <div class="toast" id="toast"></div>
 <input type="file" accept="image/*" capture="environment" id="picker" class="hide">
 <input type="file" accept="image/*" multiple id="gallery" class="hide">
@@ -300,7 +402,7 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 const APP_BUILD   = "2026-09-03";
 
 /* ============ 共通 ============ */
@@ -325,8 +427,14 @@ function toastAction(msg,label,cb){
   t.querySelector("button").onclick=()=>{ clearTimeout(t._h); done(); cb(); };
   t._h=setTimeout(done,8000);
 }
-function tick(){ $("#now").textContent = fmt(new Date()); }
-tick(); setInterval(tick,20000);
+/** 右上の時刻。アルバム写真から日時が決まるときは、そちらを出す */
+function paintNow(){
+  let b={fromAlbum:false};
+  try{ b=draftBase(); }catch(e){}
+  $("#nowLbl").textContent = b.fromAlbum ? "写真の日時" : "いま記録すると";
+  $("#nowVal").textContent = fmt(new Date(b.fromAlbum ? b.ts : Date.now()));
+}
+paintNow(); setInterval(paintNow,20000);
 
 /* ============ 食材 ============ */
 const TAGS_MAIN = ["卵","乳","小麦","えび","かに","そば","落花生","くるみ"];
@@ -423,7 +531,7 @@ const draft = { rash:[], pack:[], ing:[] };
 let ateMin=0, areas=new Set(), sev=0, selTags=new Set();
 let records=[], db=null;
 let meta = { deviceId:null, deviceName:"", clock:0, lastExportClock:0, lastFullExport:0,
-  pending:null, peers:{}, safe:[], followDone:[] };
+  pending:null, peers:{}, safe:[], followDone:[], followSnooze:{} };
 let pickTarget=null, pickAppendTo=null;
 
 /* ============ IndexedDB ============ */
@@ -571,18 +679,11 @@ galleryIn.addEventListener("change", async ()=>{
   await addFiles(fs, true);
 });
 
-for(const [id,kind] of [["#tRash","rash"],["#tPack","pack"],["#tIng","ing"]]){
-  const el=$(id);
-  el.addEventListener("click", e=>{
-    const ab=e.target.closest(".albumBtn");
-    if(ab){ e.stopPropagation(); pickAlbum(ab.dataset.album); return; }
-    shoot(kind);
-  });
-  el.addEventListener("keydown", e=>{
-    if(e.target!==el) return;
-    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); shoot(kind); }
-  });
-}
+const KIND_LABEL={rash:"症状",pack:"製品",ing:"原材料表示"};
+document.querySelectorAll(".tile .albumBtn").forEach(b=>{
+  b.setAttribute("aria-label", KIND_LABEL[b.dataset.album]+"をアルバムから選ぶ");
+  b.onclick=()=>pickAlbum(b.dataset.album);
+});
 
 /** 下書きの日時を推定する。全部アルバム写真なら最古の撮影日時を採用 */
 function draftBase(){
@@ -597,19 +698,68 @@ function draftBase(){
 function renderDerived(){
   const el=$("#derived"), b=draftBase();
   el.classList.toggle("hide", !b.fromAlbum);
-  if(b.fromAlbum) el.textContent = `この記録の日時は ${fmt(new Date(b.ts))} になります（写真の撮影日時から）。ちがう場合は保存後に「書き足す」で直せます。`;
+  if(b.fromAlbum) el.textContent = `この記録の日時は ${fmt(new Date(b.ts))} になります（写真の撮影日時から）。ちがう場合は保存後に「記録を直す」で直せます。`;
+  paintNow();
 }
 
+/** タイルは「ラベル → サムネの棚 → アルバム行」。ラベルは写真で隠れない */
 function paintTiles(){
-  [["rash","#tRash"],["pack","#tPack"],["ing","#tIng"]].forEach(([k,sel])=>{
-    const el=$(sel); el.querySelectorAll(".strip,.count").forEach(n=>n.remove());
-    const list=draft[k]; if(!list.length) return;
-    const strip=document.createElement("div"); strip.className="strip";
-    list.slice(-3).forEach(s=>{ const im=new Image(); im.src=src(s.blob); strip.appendChild(im); });
-    const c=document.createElement("span"); c.className="count"; c.textContent=list.length+"枚 ＋";
-    el.append(strip,c);
+  [["rash","#tRash","カメラでとる"],["pack","#tPack","とる"],["ing","#tIng","とる"]].forEach(([k,sel,word])=>{
+    const el=$(sel), shelf=el.querySelector(".shelf");
+    const list=draft[k];
+    el.querySelector(".n").textContent = list.length ? list.length+"枚" : "";
+    shelf.innerHTML="";
+    list.forEach(sh=>{
+      const w=document.createElement("div"); w.className="ph";
+      const im=new Image(); im.src=src(sh.blob); im.alt="";
+      const x=document.createElement("button");
+      x.type="button"; x.className="x"; x.textContent="×";
+      x.setAttribute("aria-label", KIND_LABEL[k]+"のこの写真をやめる");
+      x.onclick=()=>{
+        draft[k]=draft[k].filter(q=>q.pid!==sh.pid);
+        paintTiles(); renderDerived(); saveDraft(); toast("写真をやめました");
+      };
+      w.append(im,x); shelf.appendChild(w);
+    });
+    const add=document.createElement("button");
+    add.type="button"; add.className="shoot"+(list.length?" sq":"");
+    add.textContent = list.length ? "＋" : "📷 "+word;
+    add.setAttribute("aria-label", KIND_LABEL[k]+"をカメラでとる");
+    add.onclick=()=>shoot(k);
+    shelf.appendChild(add);
   });
-  $("#btnSave").disabled = !(draft.rash.length||draft.pack.length||draft.ing.length);
+  updateSaveBar();
+}
+
+/** F-03: 押せないときは灰色で黙らず、足りないものを書く */
+function updateSaveBar(){
+  const n=draft.rash.length+draft.pack.length+draft.ing.length;
+  const hint=$("#saveHint"), sub=$("#saveSub");
+  $("#btnSave").disabled = n===0;
+  if(n===0){
+    hint.classList.remove("hide");
+    hint.innerHTML=`<b>あと1つ</b><span>写真を1枚とると保存できます</span>`;
+    sub.textContent="";
+  }else{
+    hint.classList.add("hide");
+    const parts=[];
+    if(draft.rash.length) parts.push("症状"+draft.rash.length+"枚");
+    if(draft.pack.length) parts.push("製品"+draft.pack.length+"枚");
+    if(draft.ing.length) parts.push("原材料"+draft.ing.length+"枚");
+    const b=draftBase();
+    sub.textContent=parts.join("・")+" ／ "+fmt(new Date(b.ts))+" の記録として";
+  }
+}
+
+/** 「くわしく書く」に何か入っているかをバッジで外から見せる */
+function updateMoreBadge(){
+  const b=$("#moreBadge"); if(!b) return;
+  const bits=[];
+  if(selTags.size) bits.push("食材"+selTags.size);
+  if($("#fProduct").value.trim()) bits.push("製品名");
+  if($("#fNote").value.trim()) bits.push("メモ");
+  b.textContent=bits.join("・");
+  b.classList.toggle("hide", !bits.length);
 }
 
 /* ============ 食材チップ ============ */
@@ -623,7 +773,8 @@ function renderTagChips(host, sel, onChange, expandedRef){
   const shown = expandedRef.v ? [...TAGS_MAIN,...TAGS_MORE,...extra]
                               : [...TAGS_MAIN, ...[...TAGS_MORE,...extra].filter(t=>sel.has(t))];
   host.innerHTML = `<div class="chips">${
-    shown.map(t=>`<button type="button" class="chip${sel.has(t)?" on":""}${meta.safe.includes(t)?" safe":""}" data-t="${esc(t)}">${esc(t)}</button>`).join("")
+    shown.map(t=>`<button type="button" class="chip" aria-pressed="${sel.has(t)}" data-t="${esc(t)}">${esc(t)}${
+      meta.safe.includes(t)?`<span class="ex">除外中</span>`:""}</button>`).join("")
   }</div><button type="button" class="moreTags">${expandedRef.v?"▲ 閉じる":"▼ ほかの食材を出す"}</button>`;
   host.querySelector(".chips").onclick = e=>{
     const b=e.target.closest(".chip"); if(!b) return;
@@ -636,7 +787,10 @@ function renderTagChips(host, sel, onChange, expandedRef){
   };
 }
 const tagExpand={v:false};
-function paintTagBox(){ renderTagChips($("#tagBox"), selTags, saveDraft, tagExpand); }
+function paintTagBox(){
+  renderTagChips($("#tagBox"), selTags, ()=>{ saveDraft(); updateMoreBadge(); }, tagExpand);
+  updateMoreBadge();
+}
 function bindFreeTag(input, sel, host, onChange, ref){
   const add=()=>{
     const raw=input.value.split(/[,、\s]+/).map(x=>x.trim()).filter(Boolean);
@@ -649,22 +803,25 @@ function bindFreeTag(input, sel, host, onChange, ref){
 }
 
 /* ============ チップ ============ */
+/* 1つだけ選ぶ（解除できない） */
 $("#ateChips").addEventListener("click",e=>{
-  const b=e.target.closest(".chip"); if(!b) return;
-  [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-pressed","false"));
-  b.setAttribute("aria-pressed","true"); ateMin=+b.dataset.min; saveDraft();
+  const b=e.target.closest("button"); if(!b) return;
+  [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-checked","false"));
+  b.setAttribute("aria-checked","true"); ateMin=+b.dataset.min; saveDraft();
 });
+/* いくつでも選ぶ */
 $("#areaChips").addEventListener("click",e=>{
-  const b=e.target.closest(".chip"); if(!b) return;
-  const on=b.getAttribute("aria-pressed")==="true";
-  b.setAttribute("aria-pressed",on?"false":"true");
+  const b=e.target.closest("button"); if(!b) return;
+  const on=b.getAttribute("aria-checked")==="true";
+  b.setAttribute("aria-checked",on?"false":"true");
   on?areas.delete(b.textContent):areas.add(b.textContent); saveDraft();
 });
+/* 1つだけ選ぶ（押し直しで解除） */
 $("#sevChips").addEventListener("click",e=>{
-  const b=e.target.closest(".chip"); if(!b) return;
-  const on=b.getAttribute("aria-pressed")==="true";
-  [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-pressed","false"));
-  if(!on){ b.setAttribute("aria-pressed","true"); sev=+b.dataset.sev; } else sev=0;
+  const b=e.target.closest("button"); if(!b) return;
+  const on=b.getAttribute("aria-checked")==="true";
+  [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-checked","false"));
+  if(!on){ b.setAttribute("aria-checked","true"); sev=+b.dataset.sev; } else sev=0;
   saveDraft();
 });
 
@@ -700,16 +857,18 @@ async function restoreDraft(){
   areas=new Set(v.areas||[]); selTags=new Set(v.tags||[]);
   $("#fProduct").value=v.product||""; $("#fNote").value=v.note||"";
   $("#fIngText").value=v.ingText||""; renderIngHits();
-  [...$("#ateChips").children].forEach(c=>c.setAttribute("aria-pressed", (+c.dataset.min===ateMin)?"true":"false"));
-  [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-pressed", areas.has(c.textContent)?"true":"false"));
-  [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-pressed", (+c.dataset.sev===sev)?"true":"false"));
+  [...$("#ateChips").children].forEach(c=>c.setAttribute("aria-checked", (+c.dataset.min===ateMin)?"true":"false"));
+  [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-checked", areas.has(c.textContent)?"true":"false"));
+  [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-checked", (+c.dataset.sev===sev)?"true":"false"));
+  updateMoreBadge();
   const bar=$("#draftBar");
   bar.classList.remove("hide");
   const n=draft.rash.length+draft.pack.length+draft.ing.length;
   bar.innerHTML=`<span>書きかけの記録を戻しました（写真${n}枚・${fmtShort(new Date(v.at))}）</span>
     <button id="dDrop">捨てる</button>`;
   $("#dDrop").onclick=async ()=>{ await clearDraft(); resetDraft(); bar.classList.add("hide"); toast("書きかけを捨てました"); };
-  if(document.querySelector("details.more")) document.querySelector("details.more").open = !!(v.product||v.note||v.ingText||selTags.size);
+  const more=document.querySelector("details.more");
+  if(more) more.open = !!(v.product||v.note||v.ingText||selTags.size);
 }
 
 /* ============ 保存 ============ */
@@ -740,10 +899,10 @@ function resetDraft(){
   $("#fProduct").value="";$("#fTagFree").value="";$("#fNote").value="";
   $("#fIngText").value=""; $("#ingHits").className="ingHits hide"; $("#ingHits").innerHTML="";
   paintTagBox();
-  [...$("#ateChips").children].forEach((c,i)=>c.setAttribute("aria-pressed",i===0?"true":"false"));
-  [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-pressed","false"));
-  [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-pressed","false"));
-  paintTiles(); renderDerived();
+  [...$("#ateChips").children].forEach((c,i)=>c.setAttribute("aria-checked",i===0?"true":"false"));
+  [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-checked","false"));
+  [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-checked","false"));
+  paintTiles(); renderDerived(); updateMoreBadge();
 }
 
 /* ============ 一覧 ============ */
@@ -755,7 +914,8 @@ function renderList(){
   const pane=$("#paneList"); pane.innerHTML="";
   const sorted=[...live()].sort((a,b)=>b.ts-a.ts);
   if(!sorted.length){
-    pane.innerHTML=`<p class="empty">まだ記録がありません。<br>症状が出たら、まず上の赤いボタンで1枚。製品と原材料は落ち着いてからで大丈夫です。</p>`;
+    pane.innerHTML=`<p class="empty">まだ記録がありません。<br>症状が出たら、上の「📷 カメラでとる」で1枚。製品と原材料は落ち着いてからで大丈夫です。</p>`;
+    updateTabCounts();
     return;
   }
   for(const r of sorted){
@@ -780,29 +940,30 @@ function renderList(){
       ${r.note?`<p class="kv"><b>メモ</b> ${esc(r.note)}</p>`:""}`;
     body.appendChild(info);
     const acts=document.createElement("div"); acts.className="acts";
-    acts.innerHTML=`<button data-a="rash">経過を撮る</button><button data-a="pack">製品を足す</button>
-      <button data-a="ing">原材料を足す</button><button data-a="album">🖼 アルバムから足す</button>
-      <button data-a="edit">書き足す</button><button data-a="del" class="del">削除</button>`;
-    acts.addEventListener("click", async e=>{
+    acts.innerHTML=`<button type="button" data-a="photo" class="pri">📷 写真を足す</button>
+      <button type="button" data-a="edit" class="sec">記録を直す</button>
+      <button type="button" data-a="menu" class="kebab" aria-label="この記録のその他の操作">⋯</button>`;
+    acts.addEventListener("click", e=>{
       const b=e.target.closest("button"); if(!b) return;
       const a=b.dataset.a;
-      if(a==="del"){
-        r.deleted=true; r.delTs=Date.now(); r.rev=bump(); r.dev=meta.deviceId;
-        await putRec(r); await saveMeta();
-        renderList(); renderTally(); renderStat();
-        toastAction("記録を削除しました","取り消す", async ()=>{
-          r.deleted=false; r.delTs=null; r.rev=bump(); r.dev=meta.deviceId;
-          await putRec(r); await saveMeta();
-          renderList(); renderTally(); renderStat(); toast("戻しました");
-        });
-      }else if(a==="album"){
-        chooseKind(k=>pickAlbum(k,r.id));
-      }else if(a==="edit"){
-        openEditSheet(r);
-      }else shoot(a,r.id);
+      if(a==="photo") openAddPhoto(r);
+      else if(a==="edit") openEditSheet(r);
+      else openRecMenu(r);
     });
     body.appendChild(acts); d.appendChild(body); pane.appendChild(d);
   }
+  updateTabCounts();
+}
+
+async function deleteRec(r){
+  r.deleted=true; r.delTs=Date.now(); r.rev=bump(); r.dev=meta.deviceId;
+  await putRec(r); await saveMeta();
+  renderList(); renderTally(); renderStat();
+  toastAction("記録を削除しました","取り消す", async ()=>{
+    r.deleted=false; r.delTs=null; r.rev=bump(); r.dev=meta.deviceId;
+    await putRec(r); await saveMeta();
+    renderList(); renderTally(); renderStat(); toast("戻しました");
+  });
 }
 let viewerState=null;
 function openViewer(list, idx, title, rec, kind){
@@ -813,7 +974,8 @@ function openViewer(list, idx, title, rec, kind){
     ${rec?`<button class="vdel" id="vDel">この写真を消す</button>`:""}
     <img id="vImg" alt="">
     <div class="vcap" id="vCap"></div>
-    <div class="vnav"><button id="vPrev">← 前</button><button id="vNext">次 →</button></div>
+    <div class="vdots" id="vDots"></div>
+    <div class="vnav"><button type="button" id="vPrev">← 前</button><button type="button" id="vNext">次 →</button></div>
   </div>`;
   const paint=()=>{
     const s2=viewerState.list[viewerState.idx];
@@ -821,6 +983,9 @@ function openViewer(list, idx, title, rec, kind){
     $("#vCap").textContent=`${viewerState.title}  ${viewerState.idx+1}/${viewerState.list.length}  ${fmt(new Date(s2.ts))}`;
     $("#vPrev").disabled=viewerState.idx===0;
     $("#vNext").disabled=viewerState.idx===viewerState.list.length-1;
+    const L=viewerState.list.length;
+    $("#vDots").innerHTML = (L>1&&L<=12)
+      ? viewerState.list.map((_,i)=>`<i class="${i===viewerState.idx?"on":""}"></i>`).join("") : "";
   };
   const step=n=>{ const i=viewerState.idx+n; if(i<0||i>=viewerState.list.length) return; viewerState.idx=i; disarm(); paint(); };
   let armed=false;
@@ -872,13 +1037,56 @@ function gallery(title,list,rec,kind){
   w.append(h,g); return w;
 }
 
+/** シートを開く。背景タップ・Escでも閉じる。戻り値は閉じる関数 */
+function openSheet(html, onClose){
+  const host=$("#modalHost");
+  host.innerHTML=`<div class="modal" id="mOverlay"><div class="sheet" role="dialog" aria-modal="true">
+    <div class="grab"></div>${html}</div></div>`;
+  let shut=false;
+  const close=()=>{
+    if(shut) return; shut=true;
+    host.innerHTML=""; document.removeEventListener("keydown",key); onClose&&onClose();
+  };
+  const key=e=>{ if(e.key==="Escape"){ e.preventDefault(); close(); } };
+  document.addEventListener("keydown",key);
+  $("#mOverlay").addEventListener("click",e=>{ if(e.target.id==="mOverlay") close(); });
+  return close;
+}
+
+/** F-08: 6つ並んでいた写真追加を1枚のシートに畳む */
+function openAddPhoto(rec){
+  const rows=[["rash","症状（経過）"],["pack","製品"],["ing","原材料表示"]];
+  const close=openSheet(`<h2>写真を足す</h2>
+    <div class="addGrid">${rows.map(([k,l])=>`<div class="addRow"><span class="k">${esc(l)}</span>
+      <button type="button" class="cam" data-k="${k}" data-src="cam">📷 撮る</button>
+      <button type="button" data-k="${k}" data-src="alb">🖼 アルバム</button></div>`).join("")}</div>
+    <div class="mbtns"><button type="button" id="apNo">やめる</button></div>`);
+  $("#apNo").onclick=close;
+  document.querySelector(".addGrid").onclick=e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    close();
+    if(b.dataset.src==="cam") shoot(b.dataset.k, rec.id); else pickAlbum(b.dataset.k, rec.id);
+  };
+}
+
+/** F-08: 削除は一覧から出し、消える中身を見せてから確定させる */
+function openRecMenu(r){
+  const n=r.photos.rash.length+r.photos.pack.length+r.photos.ing.length;
+  const close=openSheet(`<h2>この記録を削除しますか</h2>
+    <p class="danger">写真${n}枚もいっしょに消えます。7日間は取り消せるので、あとから戻せます。</p>
+    <div class="mrow"><span>記録の日時</span><b>${fmt(new Date(r.ts))}</b></div>
+    <div class="mrow"><span>製品名</span><b>${esc(r.product||"なし")}</b></div>
+    <div class="mbtns"><button type="button" id="rmNo">やめる</button>
+      <button type="button" id="rmGo" class="danger">削除する</button></div>`);
+  $("#rmNo").onclick=close;
+  $("#rmGo").onclick=async ()=>{ close(); await deleteRec(r); };
+}
+
 function openEditSheet(r){
   const sel=new Set(r.tags), ar=new Set(r.areas);
   let sv=r.sev;
   const ref={v:false};
-  const host=$("#modalHost");
-  host.innerHTML=`<div class="modal"><div class="sheet">
-    <h2>記録を書き足す</h2>
+  const close=openSheet(`<h2>この記録を直す</h2>
     <div class="sheetScroll">
       <div class="field"><div class="lbl">記録の日時</div>
         <input type="text" id="eDT" value="${fmt(new Date(r.ts))}" inputmode="numeric"></div>
@@ -887,27 +1095,29 @@ function openEditSheet(r){
       <div class="field"><div class="lbl">気になる食材</div>
         <div class="tagbox" id="eTags"></div>
         <input type="text" id="eTagFree" placeholder="ほかにあれば入力して確定"></div>
-      <div class="field"><div class="lbl">出た場所</div><div class="chips" id="eAreas"></div></div>
-      <div class="field"><div class="lbl">強さ</div><div class="chips" id="eSev"></div></div>
+      <div class="field"><div class="flab"><b>出た場所</b><span class="rulehint">あてはまるものぜんぶ</span></div>
+        <div class="checks" id="eAreas" role="group" aria-label="出た場所"></div></div>
+      <div class="field"><div class="flab"><b>強さ</b><span class="rulehint">1つだけ・押し直しで解除</span></div>
+        <div class="seg sv" id="eSev" role="radiogroup" aria-label="強さ"></div></div>
       <div class="field"><div class="lbl">メモ</div>
         <textarea id="eNote" placeholder="直前に食べた他のもの、体調など">${esc(r.note)}</textarea></div>
     </div>
-    <div class="mbtns"><button id="eNo">やめる</button><button id="eGo" class="go">保存</button></div>
-  </div></div>`;
+    <div class="mbtns"><button type="button" id="eNo">やめる</button>
+      <button type="button" id="eGo" class="go">保存</button></div>`);
   renderTagChips($("#eTags"),sel,null,ref);
   bindFreeTag($("#eTagFree"),sel,$("#eTags"),null,ref);
-  const AREAS=[...document.querySelectorAll("#areaChips .chip")].map(c=>c.textContent);
+  const AREAS=[...document.querySelectorAll("#areaChips button")].map(c=>c.textContent);
   const paintA=()=>{ $("#eAreas").innerHTML=AREAS.map(a=>
-    `<button type="button" class="chip" aria-pressed="${ar.has(a)}">${esc(a)}</button>`).join(""); };
+    `<button type="button" role="checkbox" aria-checked="${ar.has(a)}">${esc(a)}</button>`).join(""); };
   paintA();
-  $("#eAreas").onclick=e=>{ const b=e.target.closest(".chip"); if(!b) return;
+  $("#eAreas").onclick=e=>{ const b=e.target.closest("button"); if(!b) return;
     ar.has(b.textContent)?ar.delete(b.textContent):ar.add(b.textContent); paintA(); };
   const paintS=()=>{ $("#eSev").innerHTML=[1,2,3].map(n=>
-    `<button type="button" class="chip sev" data-sev="${n}" aria-pressed="${sv===n}">${SEV[n]}</button>`).join(""); };
+    `<button type="button" role="radio" data-sev="${n}" aria-checked="${sv===n}">${SEV[n]}</button>`).join(""); };
   paintS();
-  $("#eSev").onclick=e=>{ const b=e.target.closest(".chip"); if(!b) return;
+  $("#eSev").onclick=e=>{ const b=e.target.closest("button"); if(!b) return;
     sv = sv===+b.dataset.sev ? 0 : +b.dataset.sev; paintS(); };
-  $("#eNo").onclick=()=>host.innerHTML="";
+  $("#eNo").onclick=close;
   $("#eGo").onclick=async ()=>{
     const t=parseDT($("#eDT").value);
     if(!t){ toast("日時の形式が読めません（2026/09/02 19:30）"); return; }
@@ -918,8 +1128,8 @@ function openEditSheet(r){
     r.tags=[...sel]; r.areas=[...ar]; r.sev=sv;
     r.rev=bump(); r.dev=meta.deviceId;
     await putRec(r); await saveMeta();
-    host.innerHTML="";
-    renderList(); renderTally(); renderStat(); toast("更新しました");
+    close();
+    renderList(); renderTally(); renderStat(); toast("直しました");
   };
 }
 
@@ -929,24 +1139,6 @@ function parseDT(str){
   const d=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]);
   return isNaN(d.getTime())?0:d.getTime();
 }
-function chooseKind(cb){
-  const host=$("#modalHost");
-  host.innerHTML=`<div class="modal"><div class="sheet">
-    <h2>どの写真として足しますか</h2>
-    <div class="syncbtns">
-      <button data-k="rash">症状</button>
-      <button data-k="pack">製品</button>
-      <button data-k="ing">原材料表示</button>
-    </div>
-    <div class="mbtns"><button id="kNo">やめる</button></div>
-  </div></div>`;
-  host.querySelector(".syncbtns").addEventListener("click",e=>{
-    const b=e.target.closest("button"); if(!b) return;
-    host.innerHTML=""; cb(b.dataset.k);
-  });
-  $("#kNo").onclick=()=>host.innerHTML="";
-}
-
 /* ============ 集計 ============ */
 function renderTally(){
   const pane=$("#paneTally"); const L=live();
@@ -957,7 +1149,7 @@ function renderTally(){
   const t=all.filter(([k])=>!meta.safe.includes(k));
   const cleared=all.filter(([k])=>meta.safe.includes(k));
   const p=rows(prodN);
-  if(!L.length){ pane.innerHTML=`<p class="empty">記録がたまると、ここに食材ごとの回数が並びます。</p>`; return; }
+  if(!L.length){ pane.innerHTML=`<p class="empty">記録がたまると、ここに食材ごとの回数が並びます。</p>`; updateTabCounts(); return; }
   const maxT=t.length?t[0][1]:1;
   pane.innerHTML=`
     <p class="tallyNote">全${L.length}件のうち、同じ食材が何回出てきたか。上に集まるものが候補です。<br>
@@ -969,24 +1161,23 @@ function renderTally(){
     <div class="safeRow"><span>食べても平気だと分かった食材を外す</span><button id="safeEdit">えらぶ</button></div>
     ${p.length?`<h2 style="font-size:14px;margin:20px 0 4px">製品ごと</h2><table class="tally"><tbody>${p.map(([k,n])=>`<tr><td>${esc(k)}</td><td class="n">${n}</td></tr>`).join("")}</tbody></table>`:""}`;
   const se=$("#safeEdit"); if(se) se.onclick=openSafeSheet;
+  updateTabCounts();
 }
 
 function openSafeSheet(){
   const sel=new Set(meta.safe); const ref={v:true};
-  const host=$("#modalHost");
-  host.innerHTML=`<div class="modal"><div class="sheet">
-    <h2>大丈夫だった食材</h2>
-    <p class="tallyNote">食べても反応が出なかったと分かっている食材をえらぶと、集計の候補から外れます。あとで戻せます。</p>
+  const close=openSheet(`<h2>大丈夫だった食材</h2>
+    <p class="tallyNote">食べても反応が出なかったと分かっている食材をえらぶと、集計の候補から外れます。記録に付けること自体はできます。あとで戻せます。</p>
     <div class="sheetScroll"><div class="tagbox" id="sTags"></div>
       <input type="text" id="sFree" placeholder="一覧にないものは入力して確定"></div>
-    <div class="mbtns"><button id="sNo">やめる</button><button id="sGo" class="go">決定</button></div>
-  </div></div>`;
+    <div class="mbtns"><button type="button" id="sNo">やめる</button>
+      <button type="button" id="sGo" class="go">決定</button></div>`);
   renderTagChips($("#sTags"),sel,null,ref);
   bindFreeTag($("#sFree"),sel,$("#sTags"),null,ref);
-  $("#sNo").onclick=()=>host.innerHTML="";
+  $("#sNo").onclick=close;
   $("#sGo").onclick=async ()=>{
     meta.safe=[...sel]; await saveMeta();
-    host.innerHTML=""; renderTally(); paintTagBox(); toast("集計に反映しました");
+    close(); renderTally(); paintTagBox(); toast("集計に反映しました");
   };
 }
 
@@ -1018,8 +1209,11 @@ function renderFollowup(){
   const host=$("#followup"); host.innerHTML="";
   const now=Date.now();
   const done=new Set(meta.followDone||[]);
+  const snz=meta.followSnooze||{};
+  const SNOOZE=4*3600000;
   const cand=live().filter(r=>{
     if(done.has(r.id)) return false;
+    if(snz[r.id] && now-snz[r.id] < SNOOZE) return false;
     if(!r.photos.rash.length) return false;
     if(now-r.ts > 36*3600000) return false;
     const lastShot=Math.max(...r.photos.rash.map(p=>p.ts));
@@ -1030,14 +1224,28 @@ function renderFollowup(){
   const h=Math.round((now-r.ts)/3600000);
   const div=document.createElement("div"); div.className="followup";
   div.innerHTML=`<span>${h}時間前の記録、その後どうなりましたか？ 消えていれば1枚あると経過がわかります。</span>
-    <span class="fbtns"><button data-a="shoot">撮る</button><button data-a="x" class="x">あとで</button></span>`;
+    <span class="fbtns"><button type="button" data-a="shoot">撮る</button>
+      <button type="button" data-a="later" class="x">あとで</button>
+      <button type="button" data-a="never" class="x">もう出さない</button></span>`;
   div.addEventListener("click", async e=>{
     const b=e.target.closest("button"); if(!b) return;
-    if(b.dataset.a==="shoot"){ shoot("rash", r.id); }
+    const a=b.dataset.a;
+    if(a==="later"){
+      meta.followSnooze=Object.assign({}, meta.followSnooze||{}, {[r.id]:now});
+      await saveMeta(); renderFollowup(); toast("4時間後にまたお知らせします");
+      return;
+    }
+    if(a==="shoot") shoot("rash", r.id);
     meta.followDone=[...(meta.followDone||[]), r.id].slice(-50);
     await saveMeta(); renderFollowup();
   });
   host.appendChild(div);
+}
+function updateTabCounts(){
+  const L=live(), kinds=new Set();
+  L.forEach(r=>r.tags.forEach(t=>kinds.add(t)));
+  $("#tnList").textContent = L.length ? L.length : "";
+  $("#tnTally").textContent = kinds.size ? kinds.size+"種" : "";
 }
 $("#tabList").onclick=()=>swap(true);
 $("#tabTally").onclick=()=>swap(false);
@@ -1247,9 +1455,9 @@ function previewAndApply(sync, entries){
     const plan=planMerge(sync);
     const who=sync.fromName||"相手の端末";
     const old = sync.created < (meta.peers[sync.from]?.lastImport||0);
-    const host=$("#modalHost");
-    host.innerHTML=`<div class="modal"><div class="sheet">
-      <h2>${esc(who)}からの同期ファイル</h2>
+    let settled=false;
+    const fin=()=>{ if(!settled){ settled=true; resolve(); } };
+    const close=openSheet(`<h2>${esc(who)}からの同期ファイル</h2>
       ${old?`<div class="warn">このファイルは前回読み込んだものより古いです。削除した記録が戻る可能性があります。</div>`:""}
       <div class="mrow"><span>新しく増える記録</span><b>${plan.add.length}件</b></div>
       <div class="mrow"><span>更新される記録</span><b>${plan.update.length}件</b></div>
@@ -1258,13 +1466,12 @@ function previewAndApply(sync, entries){
       <div class="mrow"><span>削除が反映される</span><b>${plan.del.length}件</b></div>
       <div class="mrow"><span>変化なし</span><b>${plan.skip}件</b></div>
       ${plan.conflict.length?`<div class="warn" style="margin-top:10px">${plan.conflict.length}件は両方で書き換えられています。新しい方を採用し、この後に一覧の先頭へ出します。</div>`:""}
-      <div class="mbtns"><button id="mNo">やめる</button><button id="mGo" class="go">取り込む</button></div>
-    </div></div>`;
-    $("#mNo").onclick=()=>{ host.innerHTML=""; resolve(); };
+      <div class="mbtns"><button type="button" id="mNo">やめる</button>
+        <button type="button" id="mGo" class="go">取り込む</button></div>`, fin);
+    $("#mNo").onclick=close;
     $("#mGo").onclick=async ()=>{
-      host.innerHTML="";
+      close();
       await applyMerge(sync,entries,plan);
-      resolve();
     };
   });
 }
@@ -1380,6 +1587,8 @@ async function renderStat(){
     `記録 ${L}件${T?`（削除済み ${T}件）`:""}${use}<br>`+
     `未送信の変更 ${pend}件<br>`+
     `最後の全書き出し ${meta.lastFullExport?fmt(new Date(meta.lastFullExport)):"まだ"}`;
+  const sb=$("#syncBadge");
+  if(sb){ sb.textContent = pend ? "未送信"+pend : ""; sb.classList.toggle("hide", !pend); }
   const b=$("#btnReply");
   if(meta.pending && meta.pending.ids.length){
     b.classList.remove("hide");
@@ -1396,8 +1605,8 @@ function checkBackupNudge(){
     : "まだ一度もバックアップしていません。アプリを消すと記録も消えます。";
 }
 
-$("#fProduct").addEventListener("input", saveDraft);
-$("#fNote").addEventListener("input", saveDraft);
+$("#fProduct").addEventListener("input", ()=>{ saveDraft(); updateMoreBadge(); });
+$("#fNote").addEventListener("input", ()=>{ saveDraft(); updateMoreBadge(); });
 
 $("#fIngText").addEventListener("input", ()=>{ renderIngHits(); saveDraft(); });
 $("#ingHits").addEventListener("click", e=>{
@@ -1469,9 +1678,7 @@ async function swState(){
 }
 async function showVersionInfo(){
   const st=await swState();
-  const host=$("#modalHost");
-  host.innerHTML=`<div class="modal"><div class="sheet">
-    <h2>バージョン</h2>
+  const close=openSheet(`<h2>バージョン</h2>
     <div class="sheetScroll">
       <div class="field"><div class="lbl">この画面の版</div><div>v${esc(APP_VERSION)}</div></div>
       <div class="field"><div class="lbl">ビルド日</div><div>${esc(APP_BUILD)}</div></div>
@@ -1479,11 +1686,11 @@ async function showVersionInfo(){
       ${st.waiting?`<p class="note" style="margin:0">「更新して開き直す」を押すと新しい版に切り替わります。記録は消えません。</p>`:""}
     </div>
     <div class="mbtns">
-      <button id="vClose">閉じる</button>
-      ${st.waiting?`<button id="vApply" class="go">更新して開き直す</button>`:`<button id="vCheck" class="go">更新を確認</button>`}
-    </div>
-  </div></div>`;
-  $("#vClose").onclick=()=>host.innerHTML="";
+      <button type="button" id="vClose">閉じる</button>
+      ${st.waiting?`<button type="button" id="vApply" class="go">更新して開き直す</button>`
+                  :`<button type="button" id="vCheck" class="go">更新を確認</button>`}
+    </div>`);
+  $("#vClose").onclick=close;
   const apply=$("#vApply");
   if(apply) apply.onclick=()=>{
     if(st.reg&&st.reg.waiting) st.reg.waiting.postMessage("skipWaiting");
