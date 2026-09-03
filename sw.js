@@ -1,7 +1,13 @@
 /* 変更したら index.html の APP_VERSION と同じ値に上げる（README「バージョン」参照） */
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const CACHE = "kuchi-log-" + VERSION;
-const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
+const ASSETS = [
+  "./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
+  "./vendor/tesseract/tesseract.min.js", "./vendor/tesseract/worker.min.js",
+  "./vendor/tesseract/core/tesseract-core.wasm.js", "./vendor/tesseract/core/tesseract-core-simd.wasm.js",
+  "./vendor/tesseract/core/tesseract-core-lstm.wasm.js", "./vendor/tesseract/core/tesseract-core-simd-lstm.wasm.js",
+  "./vendor/tesseract/lang/jpn.traineddata.gz"
+];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
