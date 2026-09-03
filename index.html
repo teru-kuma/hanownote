@@ -219,8 +219,13 @@ table.tally td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:
 
 /* 写真ビューア */
 .viewer{position:fixed;inset:0;background:#0E1413f2;z-index:70;display:flex;
-  flex-direction:column;align-items:center;justify-content:center;touch-action:pan-y}
-.viewer img{max-width:96vw;max-height:74vh;object-fit:contain;border-radius:6px}
+  flex-direction:column;align-items:center;justify-content:center}
+.viewer .vstage{width:96vw;max-height:74vh;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;touch-action:none}
+.viewer .vstage img{max-width:96vw;max-height:74vh;object-fit:contain;border-radius:6px;
+  touch-action:none;-webkit-user-drag:none;user-select:none;cursor:zoom-in;transform-origin:center center}
+.viewer .vstage img.zoomed{cursor:grab}
+.viewer .vstage img.dragging{cursor:grabbing}
 .viewer .vcap{color:#E6EBE9;font-size:14px;margin-top:12px;font-variant-numeric:tabular-nums;text-align:center}
 .viewer .vnav{display:flex;gap:10px;margin-top:14px}
 .viewer .vnav button{border:1px solid #ffffff40;background:#ffffff14;color:#fff;
@@ -402,7 +407,7 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 const APP_BUILD   = "2026-09-03";
 
 /* ============ 共通 ============ */
@@ -972,13 +977,45 @@ function openViewer(list, idx, title, rec, kind){
   host.innerHTML=`<div class="viewer" id="vw">
     <button class="vclose" id="vClose" aria-label="閉じる">×</button>
     ${rec?`<button class="vdel" id="vDel">この写真を消す</button>`:""}
-    <img id="vImg" alt="">
+    <div class="vstage" id="vStage"><img id="vImg" alt="" draggable="false"></div>
     <div class="vcap" id="vCap"></div>
     <div class="vdots" id="vDots"></div>
     <div class="vnav"><button type="button" id="vPrev">← 前</button><button type="button" id="vNext">次 →</button></div>
   </div>`;
+  let scale=1, tx=0, ty=0;
+  const ZMIN=1, ZMAX=4, ZTAP=2.5;
+  const applyTransform=animate=>{
+    const img=$("#vImg"); if(!img) return;
+    img.style.transition=animate?"transform .18s ease-out":"none";
+    img.style.transform=`translate(${tx}px, ${ty}px) scale(${scale})`;
+    img.classList.toggle("zoomed",scale>1.01);
+  };
+  const clampPan=()=>{
+    const img=$("#vImg"); if(!img) return;
+    if(scale<=1.001){ tx=0; ty=0; return; }
+    const maxX=Math.max(0,(img.offsetWidth*scale-img.offsetWidth)/2);
+    const maxY=Math.max(0,(img.offsetHeight*scale-img.offsetHeight)/2);
+    tx=Math.min(maxX,Math.max(-maxX,tx));
+    ty=Math.min(maxY,Math.max(-maxY,ty));
+  };
+  const resetZoom=animate=>{ scale=1; tx=0; ty=0; applyTransform(animate); };
+  const zoomTo=(newScale,clientX,clientY)=>{
+    const img=$("#vImg"); if(!img) return;
+    newScale=Math.min(ZMAX,Math.max(ZMIN,newScale));
+    const r=img.getBoundingClientRect();
+    const px=clientX-(r.left+r.width/2), py=clientY-(r.top+r.height/2);
+    const ratio=newScale/scale;
+    tx=tx+px*(1-ratio); ty=ty+py*(1-ratio);
+    scale=newScale;
+    clampPan(); applyTransform(false);
+  };
+  const toggleZoomAt=(clientX,clientY)=>{
+    if(scale>1.01) resetZoom(true);
+    else zoomTo(ZTAP,clientX,clientY);
+  };
   const paint=()=>{
     const s2=viewerState.list[viewerState.idx];
+    resetZoom(false);
     $("#vImg").src=src(s2.blob);
     $("#vCap").textContent=`${viewerState.title}  ${viewerState.idx+1}/${viewerState.list.length}  ${fmt(new Date(s2.ts))}`;
     $("#vPrev").disabled=viewerState.idx===0;
@@ -1010,12 +1047,84 @@ function openViewer(list, idx, title, rec, kind){
     disarm(); paint(); toast("写真を消しました");
   };
   $("#vw").addEventListener("click",e=>{ if(e.target.id==="vw") close(); });
-  let sx=0;
-  $("#vw").addEventListener("touchstart",e=>{ sx=e.changedTouches[0].clientX; },{passive:true});
-  $("#vw").addEventListener("touchend",e=>{
-    const dx=e.changedTouches[0].clientX-sx;
-    if(Math.abs(dx)>50) step(dx<0?1:-1);
-  },{passive:true});
+
+  const stage=$("#vStage"), img=$("#vImg");
+  const pointers=new Map();
+  let pinchStartDist=0, pinchStartScale=1;
+  let panStart=null, swipeActive=false;
+  let gestureStartT=0, gestureStartX=0, gestureStartY=0, wasMultiTouch=false;
+  let lastTapT=0, lastTapX=0, lastTapY=0;
+  const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+  stage.addEventListener("pointerdown",e=>{
+    if(e.button!==undefined && e.button>0) return;
+    try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){
+      panStart={x:e.clientX,y:e.clientY,tx,ty};
+      swipeActive=scale<=1.001;
+      gestureStartT=Date.now(); gestureStartX=e.clientX; gestureStartY=e.clientY;
+      wasMultiTouch=false;
+    } else if(pointers.size===2){
+      swipeActive=false; wasMultiTouch=true;
+      const pts=[...pointers.values()];
+      pinchStartDist=dist(pts[0],pts[1]);
+      pinchStartScale=scale;
+    }
+  });
+  stage.addEventListener("pointermove",e=>{
+    if(!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===2){
+      const pts=[...pointers.values()];
+      const d=dist(pts[0],pts[1]);
+      if(pinchStartDist>0){
+        const m=mid(pts[0],pts[1]);
+        zoomTo(pinchStartScale*(d/pinchStartDist),m.x,m.y);
+      }
+    } else if(pointers.size===1 && panStart && scale>1.01){
+      img.classList.add("dragging");
+      tx=panStart.tx+(e.clientX-panStart.x);
+      ty=panStart.ty+(e.clientY-panStart.y);
+      clampPan(); applyTransform(false);
+    }
+  });
+  const endPointer=e=>{
+    pointers.delete(e.pointerId);
+    img.classList.remove("dragging");
+    if(pointers.size<2) pinchStartDist=0;
+    if(pointers.size===1){
+      const p=[...pointers.values()][0];
+      panStart={x:p.x,y:p.y,tx,ty};
+      swipeActive=false;
+    } else if(pointers.size===0){
+      if(swipeActive && panStart){
+        const dx=e.clientX-panStart.x, dy=e.clientY-panStart.y;
+        if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)) step(dx<0?1:-1);
+      }
+      const isTap=!wasMultiTouch && Date.now()-gestureStartT<300 &&
+        dist({x:gestureStartX,y:gestureStartY},{x:e.clientX,y:e.clientY})<12;
+      if(isTap){
+        if(Date.now()-lastTapT<300 && dist({x:lastTapX,y:lastTapY},{x:e.clientX,y:e.clientY})<30){
+          toggleZoomAt(e.clientX,e.clientY);
+          lastTapT=0;
+        } else {
+          lastTapT=Date.now(); lastTapX=e.clientX; lastTapY=e.clientY;
+        }
+      } else {
+        lastTapT=0;
+      }
+      if(scale<=1.001) resetZoom(true);
+      panStart=null; swipeActive=false; wasMultiTouch=false;
+    }
+  };
+  stage.addEventListener("pointerup",endPointer);
+  stage.addEventListener("pointercancel",endPointer);
+  stage.addEventListener("wheel",e=>{
+    e.preventDefault();
+    zoomTo(scale*Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);
+  },{passive:false});
+
   const key=e=>{ if(e.key==="Escape") close(); if(e.key==="ArrowLeft") step(-1); if(e.key==="ArrowRight") step(1); };
   document.addEventListener("keydown",key);
   paint();
