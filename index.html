@@ -417,7 +417,7 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.4.1";
 const APP_BUILD   = "2026-09-04";
 
 /* ============ 共通 ============ */
@@ -523,16 +523,15 @@ function scanIngredients(text){
   return out;
 }
 
-function renderIngHits(){
-  const box = $("#ingHits");
-  const {hits, contam, contamNote} = scanIngredients($("#fIngText").value);
+function renderIngredientHits(text, box, selected){
+  const {hits, contam, contamNote} = scanIngredients(text);
   if(!hits.length && !contam.length && !contamNote){ box.className = "ingHits hide"; box.innerHTML = ""; return; }
   box.className = "ingHits";
   let html = "";
   if(hits.length){
     html += `<span class="h">表示から：</span>` +
-      hits.map(t => `<button type="button" data-t="${esc(t)}" class="${selTags.has(t) ? "on" : ""}">${selTags.has(t) ? "✓ " : ""}${esc(t)}</button>`).join("");
-    if(hits.some(t => !selTags.has(t))) html += `<button type="button" class="all" data-all="1">ぜんぶ入れる</button>`;
+      hits.map(t => `<button type="button" data-t="${esc(t)}" class="${selected.has(t) ? "on" : ""}">${selected.has(t) ? "✓ " : ""}${esc(t)}</button>`).join("");
+    if(hits.some(t => !selected.has(t))) html += `<button type="button" class="all" data-all="1">ぜんぶ入れる</button>`;
   }
   if(contam.length || contamNote){
     html += `<span class="contam">※「同じ設備で製造」などの記載があります${contam.length ? "（" + contam.join("・") + "）" : ""}。候補には入れていません。</span>`;
@@ -540,6 +539,7 @@ function renderIngHits(){
   html += `<span class="cap">入っていても表示に出ないことがあります。写真の表示をそのまま確認してください。</span>`;
   box.innerHTML = html;
 }
+function renderIngHits(){ renderIngredientHits($("#fIngText").value, $("#ingHits"), selTags); }
 
 /* ============ 状態 ============ */
 const draft = { rash:[], pack:[], ing:[] };
@@ -782,40 +782,53 @@ async function ocrCanvas(blob){
   bmp.close&&bmp.close();
   return c;
 }
-async function readIngredientsFromPhoto(){
-  if(ocrBusy||!draft.ing.length||!window.Tesseract) return;
-  ocrBusy=true; updateOcrTool();
-  const button=$("#btnOcr"); button.disabled=true; button.textContent="読み取り中…";
+function appendOcrText(field, text){
+  field.value=field.value.trim() ? `${field.value.trim()}\n${text}` : text;
+}
+async function recognizeIngredientPhoto(blob, ui){
+  if(ocrBusy||!blob||!window.Tesseract) return false;
+  ocrBusy=true;
+  const {button,setStatus,onText}=ui;
+  const originalLabel=button.textContent;
+  button.disabled=true; button.textContent="読み取り中…";
   let worker;
   try{
-    const canvas=await ocrCanvas(draft.ing[draft.ing.length-1].blob);
+    const canvas=await ocrCanvas(blob);
     worker=await Tesseract.createWorker("jpn",1,{
       workerPath:ocrAssetUrl("./vendor/tesseract/worker.min.js"),
       corePath:ocrAssetUrl("./vendor/tesseract/core"),
       langPath:ocrAssetUrl("./vendor/tesseract/lang"),
       logger:m=>{
         const label=OCR_STATUS[m.status]||"写真を読み取り中";
-        setOcrStatus(typeof m.progress==="number" ? `${label}（${Math.round(m.progress*100)}%）` : label);
+        setStatus(typeof m.progress==="number" ? `${label}（${Math.round(m.progress*100)}%）` : label);
       }
     });
     await worker.setParameters({tessedit_pageseg_mode:"6"});
     const out=await worker.recognize(canvas);
     const text=(out.data.text||"").replace(/\n{3,}/g,"\n\n").trim();
-    if(!text){ setOcrStatus("文字を読み取れませんでした。ラベルを大きく、正面から撮ってもう一度試してください。"); return; }
-    const field=$("#fIngText");
-    field.value=field.value.trim() ? `${field.value.trim()}\n${text}` : text;
-    renderIngHits(); saveDraft(); updateMoreBadge();
-    setOcrStatus("読み取り結果を入れました。写真と見比べ、必要なら直してから食材候補を選んでください。");
+    if(!text){ setStatus("文字を読み取れませんでした。ラベルを大きく、正面から撮ってもう一度試してください。"); return false; }
+    onText(text);
+    setStatus("読み取り結果を入れました。写真と見比べ、必要なら直してから食材候補を選んでください。");
     toast("原材料表示を読み取りました");
+    return true;
   }catch(e){
     console.error("OCR failed",e);
-    setOcrStatus("読み取りを始められませんでした。通信不要の機能ですが、アプリをホーム画面から開き直すか、文字を貼り付けてください。");
+    setStatus("読み取りを始められませんでした。通信不要の機能ですが、アプリをホーム画面から開き直すか、文字を貼り付けてください。");
+    return false;
   }finally{
     if(worker) try{ await worker.terminate(); }catch(e){}
     ocrBusy=false;
-    button.disabled=!draft.ing.length;
-    button.textContent="🔍 写真から読み取る";
+    button.disabled=false;
+    button.textContent=originalLabel;
   }
+}
+async function readIngredientsFromPhoto(){
+  if(!draft.ing.length) return;
+  await recognizeIngredientPhoto(draft.ing[draft.ing.length-1].blob,{
+    button:$("#btnOcr"), setStatus:setOcrStatus,
+    onText:text=>{ appendOcrText($("#fIngText"),text); renderIngHits(); saveDraft(); updateMoreBadge(); }
+  });
+  updateOcrTool();
 }
 
 /** F-03: 押せないときは灰色で黙らず、足りないものを書く */
@@ -1283,6 +1296,13 @@ function openEditSheet(r){
         <input type="text" id="eDT" value="${fmt(new Date(r.ts))}" inputmode="numeric"></div>
       <div class="field"><div class="lbl">製品名</div>
         <input type="text" id="eProduct" value="${esc(r.product)}" placeholder="例：〇〇のチーズかまぼこ"></div>
+      <div class="field"><div class="lbl">原材料表示から取り込む</div>
+        <div class="ocrTool">
+          <button type="button" id="eOcr" ${r.photos.ing.length?"":"disabled"}>🔍 写真から読み取る</button>
+          <span id="eOcrStatus" class="ocrStatus" aria-live="polite">${r.photos.ing.length?"最後に追加した原材料表示の写真を読みます。結果は下書きなので、必ず写真と見比べてください。":"原材料表示の写真がないため、文字を貼り付けてください。"}</span>
+        </div>
+        <textarea id="eIngText" rows="3" placeholder="写真から読み取るか、文字を貼り付け">${esc(r.ingText||"")}</textarea>
+        <div id="eIngHits" class="ingHits hide"></div></div>
       <div class="field"><div class="lbl">気になる食材</div>
         <div class="tagbox" id="eTags"></div>
         <input type="text" id="eTagFree" placeholder="ほかにあれば入力して確定"></div>
@@ -1295,8 +1315,25 @@ function openEditSheet(r){
     </div>
     <div class="mbtns"><button type="button" id="eNo">やめる</button>
       <button type="button" id="eGo" class="go">保存</button></div>`);
-  renderTagChips($("#eTags"),sel,null,ref);
+  const paintEditTags=()=>renderTagChips($("#eTags"),sel,null,ref);
+  const paintEditIng=()=>renderIngredientHits($("#eIngText").value,$("#eIngHits"),sel);
+  paintEditTags(); paintEditIng();
   bindFreeTag($("#eTagFree"),sel,$("#eTags"),null,ref);
+  $("#eIngText").addEventListener("input",paintEditIng);
+  $("#eIngHits").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    const {hits}=scanIngredients($("#eIngText").value);
+    if(b.dataset.all){ hits.forEach(t=>sel.add(t)); }
+    else if(b.dataset.t){ const t=b.dataset.t; sel.has(t)?sel.delete(t):sel.add(t); }
+    paintEditTags(); paintEditIng();
+  });
+  $("#eOcr").onclick=async ()=>{
+    const photo=r.photos.ing[r.photos.ing.length-1]; if(!photo) return;
+    await recognizeIngredientPhoto(photo.blob,{
+      button:$("#eOcr"), setStatus:msg=>$("#eOcrStatus").textContent=msg,
+      onText:text=>{ appendOcrText($("#eIngText"),text); paintEditIng(); }
+    });
+  };
   const AREAS=[...document.querySelectorAll("#areaChips button")].map(c=>c.textContent);
   const paintA=()=>{ $("#eAreas").innerHTML=AREAS.map(a=>
     `<button type="button" role="checkbox" aria-checked="${ar.has(a)}">${esc(a)}</button>`).join(""); };
@@ -1315,6 +1352,7 @@ function openEditSheet(r){
     const gap=r.ts-r.ateTs;
     r.ts=t; r.ateTs=t-gap;
     r.product=$("#eProduct").value.trim();
+    r.ingText=$("#eIngText").value.trim();
     r.note=$("#eNote").value.trim();
     r.tags=[...sel]; r.areas=[...ar]; r.sev=sv;
     r.rev=bump(); r.dev=meta.deviceId;
