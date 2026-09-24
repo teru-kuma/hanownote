@@ -417,8 +417,8 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.4.1";
-const APP_BUILD   = "2026-09-04";
+const APP_VERSION = "1.5.0";
+const APP_BUILD   = "2026-09-24";
 
 /* ============ 共通 ============ */
 const $ = s => document.querySelector(s);
@@ -748,7 +748,7 @@ function paintTiles(){
   updateOcrTool();
 }
 
-/* ============ 端末内OCR（試作） ============ */
+/* ============ 端末内OCR ============ */
 let ocrBusy=false;
 const OCR_STATUS={
   "loading tesseract core":"文字認識の準備中",
@@ -772,15 +772,59 @@ function setOcrStatus(msg){ const s=$("#ocrStatus"); if(s) s.textContent=msg; }
 async function ocrCanvas(blob){
   const bmp=await createImageBitmap(blob,{imageOrientation:"from-image"});
   const long=Math.max(bmp.width,bmp.height);
-  // 小さめのラベルは最大1.5倍だけ拡大する。大きな写真はそのまま読む。
-  const scale=long<1800 ? Math.min(1.5,1800/long) : 1;
+  // 原材料の小さい印字を十分な大きさまで拡大する。大きすぎる写真は端末の
+  // メモリを使いすぎないように抑える（最大約1,000万画素）。
+  let scale=Math.min(2.5,2400/long);
+  scale=Math.min(scale,Math.sqrt(10000000/(bmp.width*bmp.height)));
   const c=document.createElement("canvas");
   c.width=Math.round(bmp.width*scale); c.height=Math.round(bmp.height*scale);
   const ctx=c.getContext("2d");
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality="high";
   ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
   ctx.drawImage(bmp,0,0,c.width,c.height);
   bmp.close&&bmp.close();
+  return enhanceOcrCanvas(c);
+}
+function enhanceOcrCanvas(source){
+  const c=document.createElement("canvas");
+  c.width=source.width; c.height=source.height;
+  const ctx=c.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(source,0,0);
+  const img=ctx.getImageData(0,0,c.width,c.height);
+  const px=img.data, histogram=new Uint32Array(256);
+  for(let i=0;i<px.length;i+=4){
+    // 明るさだけでなく色の濃い印字も拾える、見た目に近い輝度へ変換する。
+    const v=Math.round(px[i]*0.299+px[i+1]*0.587+px[i+2]*0.114);
+    histogram[v]++;
+  }
+  const total=c.width*c.height;
+  let low=0, high=255, count=0;
+  for(;low<255;low++){ count+=histogram[low]; if(count>=total*.01) break; }
+  count=0;
+  for(;high>0;high--){ count+=histogram[high]; if(count>=total*.01) break; }
+  // 反射や影に引っ張られず、文字と背景の差を広げる。差が小さい写真は
+  // 無理に補正するとノイズが増えるため、そのままにする。
+  const stretch=high-low>=32 ? 255/(high-low) : 1;
+  for(let i=0;i<px.length;i+=4){
+    const gray=px[i]*0.299+px[i+1]*0.587+px[i+2]*0.114;
+    const stretched=Math.max(0,Math.min(255,(gray-low)*stretch));
+    const v=Math.max(0,Math.min(255,(stretched-128)*1.22+128));
+    px[i]=px[i+1]=px[i+2]=Math.round(v);
+  }
+  ctx.putImageData(img,0,0);
   return c;
+}
+function cleanOcrText(text){
+  return (text||"").normalize("NFKC")
+    .replace(/\r\n?/g,"\n").replace(/[ \t]+\n/g,"\n")
+    .replace(/\n{3,}/g,"\n\n").trim();
+}
+function ocrResultScore(out){
+  const text=cleanOcrText(out.data.text);
+  const chars=(text.match(/[\p{L}\p{N}]/gu)||[]).length;
+  // 信頼度だけでは短い見出しが選ばれやすいため、読めた文字量も加味する。
+  return (Number(out.data.confidence)||0)*.55+Math.min(65,chars*.55);
 }
 function appendOcrText(field, text){
   field.value=field.value.trim() ? `${field.value.trim()}\n${text}` : text;
@@ -793,6 +837,7 @@ async function recognizeIngredientPhoto(blob, ui){
   button.disabled=true; button.textContent="読み取り中…";
   let worker;
   try{
+    setStatus("写真を整えてから読み取っています…");
     const canvas=await ocrCanvas(blob);
     worker=await Tesseract.createWorker("jpn",1,{
       workerPath:ocrAssetUrl("./vendor/tesseract/worker.min.js"),
@@ -803,9 +848,15 @@ async function recognizeIngredientPhoto(blob, ui){
         setStatus(typeof m.progress==="number" ? `${label}（${Math.round(m.progress*100)}%）` : label);
       }
     });
-    await worker.setParameters({tessedit_pageseg_mode:"6"});
-    const out=await worker.recognize(canvas);
-    const text=(out.data.text||"").replace(/\n{3,}/g,"\n\n").trim();
+    // 原材料表示は、段落として読む設定と縦1列として読む設定の両方を試す。
+    // 写真ごとにより信頼でき、かつ情報量の多い方を採用する。
+    await worker.setParameters({tessedit_pageseg_mode:"6",tessedit_preserve_interword_spaces:"1"});
+    const block=await worker.recognize(canvas);
+    setStatus("読み取り結果を確認しています…");
+    await worker.setParameters({tessedit_pageseg_mode:"4",tessedit_preserve_interword_spaces:"1"});
+    const column=await worker.recognize(canvas);
+    const out=ocrResultScore(column)>ocrResultScore(block) ? column : block;
+    const text=cleanOcrText(out.data.text);
     if(!text){ setStatus("文字を読み取れませんでした。ラベルを大きく、正面から撮ってもう一度試してください。"); return false; }
     onText(text);
     setStatus("読み取り結果を入れました。写真と見比べ、必要なら直してから食材候補を選んでください。");
