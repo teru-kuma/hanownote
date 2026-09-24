@@ -1,5 +1,5 @@
 /* 変更したら index.html の APP_VERSION と同じ値に上げる（README「バージョン」参照） */
-const VERSION = "1.5.0";
+const VERSION = "1.5.1";
 const CACHE = "kuchi-log-" + VERSION;
 const ASSETS = [
   "./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",

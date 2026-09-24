@@ -417,7 +417,7 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.5.1";
 const APP_BUILD   = "2026-09-24";
 
 /* ============ 共通 ============ */
@@ -1947,6 +1947,20 @@ function markStale(){
   const b=$("#verBadge");
   if(b){ b.classList.add("stale"); b.textContent="v"+APP_VERSION+" ●"; }
 }
+let swReloading=false;
+function applySwUpdate(reg, button){
+  const waiting=reg&&reg.waiting;
+  if(!waiting) return;
+  if(button){ button.disabled=true; button.textContent="更新を適用中…"; }
+  // skipWaiting の直後はまだ古いService Workerが画面を制御している。
+  // 新しいWorkerへ切り替わったことを確認してから1度だけ再読み込みする。
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(swReloading) return;
+    swReloading=true;
+    location.reload();
+  },{once:true});
+  waiting.postMessage("skipWaiting");
+}
 async function swState(){
   if(!("serviceWorker" in navigator)) return {label:"この環境では使えません", waiting:false};
   try{
@@ -1973,10 +1987,7 @@ async function showVersionInfo(){
     </div>`);
   $("#vClose").onclick=close;
   const apply=$("#vApply");
-  if(apply) apply.onclick=()=>{
-    if(st.reg&&st.reg.waiting) st.reg.waiting.postMessage("skipWaiting");
-    location.reload();
-  };
+  if(apply) apply.onclick=()=>applySwUpdate(st.reg,apply);
   const chk=$("#vCheck");
   if(chk) chk.onclick=async ()=>{
     chk.disabled=true; chk.textContent="確認中…";
