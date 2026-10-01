@@ -84,11 +84,18 @@ h1{font-size:17px;font-weight:700;margin:0;letter-spacing:.02em;display:flex;ali
   color:#1F4459;font-weight:700}
 .checks button[aria-checked="true"]::before{content:"\2713";background:var(--pack);border-color:var(--pack);
   color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
-input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;
+input[type=text],input[type=datetime-local],textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;
   font:inherit;color:var(--ink);background:#fff}
 textarea{resize:vertical;min-height:60px}
 .row{display:flex;gap:8px;align-items:center;margin-top:8px}
 .row .lbl{margin:0;min-width:74px}
+.timePick{margin-top:8px}
+.timePick .lbl{margin:0 0 5px}
+.timeHelp{font-size:12px;color:var(--ink2);margin:6px 0 0;line-height:1.6}
+.freeTagRow{display:flex;gap:7px;align-items:stretch}
+.freeTagRow input{min-width:0;flex:1}
+.freeTagRow button{flex:0 0 auto;border:1px solid var(--pack);background:var(--pack);color:#fff;
+  border-radius:8px;padding:0 14px;min-height:44px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 details.more>summary,details.sync>summary{list-style:none;cursor:pointer;display:flex;align-items:center;
   gap:9px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
   padding:11px 12px;min-height:44px;font-size:14px;font-weight:700;color:var(--ink)}
@@ -129,6 +136,7 @@ nav.tabs .tn{font-size:12px;font-weight:400;opacity:.85;margin-left:5px;font-var
 .rec>summary{list-style:none;cursor:pointer;display:flex;gap:10px;padding:10px;align-items:center}
 .rec>summary::-webkit-details-marker{display:none}
 .rec .thumb{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--rash-soft);flex:0 0 auto}
+.rec .thumb.empty{display:flex;align-items:center;justify-content:center;color:var(--rash);font-size:12px;font-weight:700}
 .rec .meta{min-width:0;flex:1}
 .rec .when{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
 .rec .sub{font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
@@ -311,6 +319,16 @@ tr.safeTag td{opacity:.5}
   <div id="derived" class="info hide"></div>
 
   <div class="block">
+    <div class="flab"><b>記録する時刻</b><span class="rulehint">あとから指定OK</span></div>
+    <div class="seg" id="timeMode" role="radiogroup" aria-label="記録する時刻">
+      <button type="button" role="radio" data-mode="auto" aria-checked="true">いま・写真から自動</button>
+      <button type="button" role="radio" data-mode="manual" aria-checked="false">日時を指定</button>
+    </div>
+    <div id="manualTime" class="timePick hide">
+      <div class="lbl">記録する日時</div>
+      <input type="datetime-local" id="fRecordedAt">
+    </div>
+    <p id="timeHelp" class="timeHelp">写真をアルバムから選んだときは、撮影日時を使います。</p>
     <div class="flab"><b>食べたのは</b><span class="rulehint">1つだけ</span></div>
     <div class="seg" id="ateChips" role="radiogroup" aria-label="食べたのは">
       <button type="button" role="radio" data-min="0" aria-checked="true">たった今</button>
@@ -354,7 +372,8 @@ tr.safeTag td{opacity:.5}
       <div id="ingHits" class="ingHits hide"></div>
       <div class="row"><span class="lbl" style="min-width:0">気になる食材</span></div>
       <div class="tagbox" id="tagBox"></div>
-      <input type="text" id="fTagFree" placeholder="ほかにあれば入力して確定" autocomplete="off">
+      <div class="freeTagRow"><input type="text" id="fTagFree" placeholder="一覧にない食材を入力" autocomplete="off"><button type="button" id="btnAddTag">追加</button></div>
+      <p class="timeHelp">「追加」を押すか Enter で食材に入ります。記録に残すには最後に「保存する」を押します。</p>
       <div class="row"><span class="lbl" style="min-width:0">直前に食べた他のもの・メモ</span></div>
       <textarea id="fNote" placeholder="お風呂上がり、走り回ったあと、など体調のメモも役に立ちます"></textarea>
     </div>
@@ -417,8 +436,8 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.5.1";
-const APP_BUILD   = "2026-09-24";
+const APP_VERSION = "1.6.0";
+const APP_BUILD   = "2026-10-01";
 
 /* ============ 共通 ============ */
 const $ = s => document.querySelector(s);
@@ -446,8 +465,8 @@ function toastAction(msg,label,cb){
 function paintNow(){
   let b={fromAlbum:false};
   try{ b=draftBase(); }catch(e){}
-  $("#nowLbl").textContent = b.fromAlbum ? "写真の日時" : "いま記録すると";
-  $("#nowVal").textContent = fmt(new Date(b.fromAlbum ? b.ts : Date.now()));
+  $("#nowLbl").textContent = b.fromManual ? "指定した日時" : b.fromAlbum ? "写真の日時" : "いま記録すると";
+  $("#nowVal").textContent = fmt(new Date(b.ts));
 }
 paintNow(); setInterval(paintNow,20000);
 
@@ -543,7 +562,7 @@ function renderIngHits(){ renderIngredientHits($("#fIngText").value, $("#ingHits
 
 /* ============ 状態 ============ */
 const draft = { rash:[], pack:[], ing:[] };
-let ateMin=0, areas=new Set(), sev=0, selTags=new Set();
+let ateMin=0, areas=new Set(), sev=0, selTags=new Set(), recordTimeMode="auto", recordedAt=0;
 let records=[], db=null;
 let meta = { deviceId:null, deviceName:"", clock:0, lastExportClock:0, lastFullExport:0,
   pending:null, peers:{}, safe:[], followDone:[], followSnooze:{} };
@@ -703,6 +722,7 @@ document.querySelectorAll(".tile .albumBtn").forEach(b=>{
 
 /** 下書きの日時を推定する。全部アルバム写真なら最古の撮影日時を採用 */
 function draftBase(){
+  if(recordTimeMode==="manual" && recordedAt) return {ts:recordedAt, fromAlbum:false, fromManual:true};
   const all=[...draft.rash,...draft.pack,...draft.ing];
   if(!all.length) return {ts:Date.now(), fromAlbum:false};
   if(!all.every(p=>p.a)) return {ts:Date.now(), fromAlbum:false};
@@ -713,8 +733,9 @@ function draftBase(){
 }
 function renderDerived(){
   const el=$("#derived"), b=draftBase();
-  el.classList.toggle("hide", !b.fromAlbum);
-  if(b.fromAlbum) el.textContent = `この記録の日時は ${fmt(new Date(b.ts))} になります（写真の撮影日時から）。ちがう場合は保存後に「記録を直す」で直せます。`;
+  el.classList.toggle("hide", !b.fromAlbum && !b.fromManual);
+  if(b.fromManual) el.textContent = `この記録の日時は ${fmt(new Date(b.ts))} になります（指定した日時）。`;
+  else if(b.fromAlbum) el.textContent = `この記録の日時は ${fmt(new Date(b.ts))} になります（写真の撮影日時から）。`;
   paintNow();
 }
 
@@ -886,11 +907,17 @@ async function readIngredientsFromPhoto(){
 function updateSaveBar(){
   const n=draft.rash.length+draft.pack.length+draft.ing.length;
   const hint=$("#saveHint"), sub=$("#saveSub");
-  $("#btnSave").disabled = n===0;
+  const hasDetails=areas.size||sev||selTags.size||$("#fProduct").value.trim()||$("#fNote").value.trim()||$("#fIngText").value.trim();
+  $("#btnSave").disabled = !n && !hasDetails;
   if(n===0){
     hint.classList.remove("hide");
-    hint.innerHTML=`<b>あと1つ</b><span>写真を1枚とると保存できます</span>`;
-    sub.textContent="";
+    if(hasDetails){
+      hint.innerHTML=`<b>写真なしでもOK</b><span>入力した内容だけで保存できます。写真はあとから足せます。</span>`;
+      sub.textContent=`${fmt(new Date(draftBase().ts))} の記録として`;
+    }else{
+      hint.innerHTML=`<b>記録する内容を1つ</b><span>写真がなくても、場所・食材・製品名・メモなどを入れると保存できます。</span>`;
+      sub.textContent="";
+    }
   }else{
     hint.classList.add("hide");
     const parts=[];
@@ -939,7 +966,7 @@ function renderTagChips(host, sel, onChange, expandedRef){
 }
 const tagExpand={v:false};
 function paintTagBox(){
-  renderTagChips($("#tagBox"), selTags, ()=>{ saveDraft(); updateMoreBadge(); }, tagExpand);
+  renderTagChips($("#tagBox"), selTags, ()=>{ saveDraft(); updateMoreBadge(); updateSaveBar(); }, tagExpand);
   updateMoreBadge();
 }
 function bindFreeTag(input, sel, host, onChange, ref){
@@ -951,7 +978,35 @@ function bindFreeTag(input, sel, host, onChange, ref){
   };
   input.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); }});
   input.addEventListener("blur",add);
+  return add;
 }
+
+function localDateTimeValue(ts){
+  const d=new Date(ts);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function syncTimeMode(){
+  $("#manualTime").classList.toggle("hide",recordTimeMode!=="manual");
+  [...$("#timeMode").children].forEach(b=>b.setAttribute("aria-checked",b.dataset.mode===recordTimeMode?"true":"false"));
+  if(recordTimeMode==="manual" && !recordedAt){
+    recordedAt=Date.now();
+    $("#fRecordedAt").value=localDateTimeValue(recordedAt);
+  }
+  $("#timeHelp").textContent=recordTimeMode==="manual"
+    ? "翌日など、実際に症状が出た日時を指定できます。"
+    : "写真をアルバムから選んだときは、撮影日時を使います。";
+  renderDerived(); updateSaveBar();
+}
+
+$("#timeMode").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  recordTimeMode=b.dataset.mode; syncTimeMode(); saveDraft();
+});
+$("#fRecordedAt").addEventListener("input",()=>{
+  const t=new Date($("#fRecordedAt").value).getTime();
+  if(!isNaN(t)) recordedAt=t;
+  renderDerived(); updateSaveBar(); saveDraft();
+});
 
 /* ============ チップ ============ */
 /* 1つだけ選ぶ（解除できない） */
@@ -966,6 +1021,7 @@ $("#areaChips").addEventListener("click",e=>{
   const on=b.getAttribute("aria-checked")==="true";
   b.setAttribute("aria-checked",on?"false":"true");
   on?areas.delete(b.textContent):areas.add(b.textContent); saveDraft();
+  updateSaveBar();
 });
 /* 1つだけ選ぶ（押し直しで解除） */
 $("#sevChips").addEventListener("click",e=>{
@@ -973,7 +1029,7 @@ $("#sevChips").addEventListener("click",e=>{
   const on=b.getAttribute("aria-checked")==="true";
   [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-checked","false"));
   if(!on){ b.setAttribute("aria-checked","true"); sev=+b.dataset.sev; } else sev=0;
-  saveDraft();
+  saveDraft(); updateSaveBar();
 });
 
 /* ============ 下書きの自動保存 ============ */
@@ -987,7 +1043,7 @@ function saveDraft(){
         && !$("#fProduct").value.trim() && !$("#fNote").value.trim() && !$("#fIngText").value.trim();
       if(empty){ await idbReq(st("meta","readwrite").delete("draft")); return; }
       await idbReq(st("meta","readwrite").put({k:"draft", v:{
-        at:Date.now(), ateMin, sev, areas:[...areas], tags:[...selTags],
+        at:Date.now(), ateMin, sev, areas:[...areas], tags:[...selTags], recordTimeMode, recordedAt,
         product:$("#fProduct").value, note:$("#fNote").value, ingText:$("#fIngText").value,
         photos:{rash:draft.rash,pack:draft.pack,ing:draft.ing}
       }}));
@@ -1005,12 +1061,15 @@ async function restoreDraft(){
   const v=d.v;
   draft.rash=v.photos.rash||[]; draft.pack=v.photos.pack||[]; draft.ing=v.photos.ing||[];
   ateMin=v.ateMin||0; sev=v.sev||0;
+  recordTimeMode=v.recordTimeMode||"auto"; recordedAt=v.recordedAt||0;
   areas=new Set(v.areas||[]); selTags=new Set(v.tags||[]);
   $("#fProduct").value=v.product||""; $("#fNote").value=v.note||"";
   $("#fIngText").value=v.ingText||""; renderIngHits();
   [...$("#ateChips").children].forEach(c=>c.setAttribute("aria-checked", (+c.dataset.min===ateMin)?"true":"false"));
   [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-checked", areas.has(c.textContent)?"true":"false"));
   [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-checked", (+c.dataset.sev===sev)?"true":"false"));
+  if(recordedAt) $("#fRecordedAt").value=localDateTimeValue(recordedAt);
+  syncTimeMode();
   updateMoreBadge();
   const bar=$("#draftBar");
   bar.classList.remove("hide");
@@ -1026,6 +1085,9 @@ async function restoreDraft(){
 function newId(p){ return p + Date.now().toString(36) + "-" + meta.deviceId + "-" + Math.random().toString(36).slice(2,6); }
 
 $("#btnSave").onclick = async ()=>{
+  const n=draft.rash.length+draft.pack.length+draft.ing.length;
+  const hasDetails=areas.size||sev||selTags.size||$("#fProduct").value.trim()||$("#fNote").value.trim()||$("#fIngText").value.trim();
+  if(!n && !hasDetails){ updateSaveBar(); return; }
   await askPersist();
   const base=draftBase(), now=base.ts;
   const rec = {
@@ -1046,14 +1108,14 @@ $("#btnSave").onclick = async ()=>{
 };
 function resetDraft(){
   draft.rash=[];draft.pack=[];draft.ing=[];
-  ateMin=0;areas.clear();sev=0;selTags.clear();
+  ateMin=0;areas.clear();sev=0;selTags.clear();recordTimeMode="auto";recordedAt=0;
   $("#fProduct").value="";$("#fTagFree").value="";$("#fNote").value="";
   $("#fIngText").value=""; $("#ingHits").className="ingHits hide"; $("#ingHits").innerHTML="";
   paintTagBox();
   [...$("#ateChips").children].forEach((c,i)=>c.setAttribute("aria-checked",i===0?"true":"false"));
   [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-checked","false"));
   [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-checked","false"));
-  paintTiles(); renderDerived(); updateMoreBadge();
+  syncTimeMode(); paintTiles(); renderDerived(); updateMoreBadge();
 }
 
 /* ============ 一覧 ============ */
@@ -1075,7 +1137,7 @@ function renderList(){
     const areaTxt=r.areas.length?r.areas.join("・"):"部位の記録なし";
     const byOther = r.srcName && r.dev!==meta.deviceId;
     const sum=document.createElement("summary");
-    sum.innerHTML=`<img class="thumb" alt="" ${head?`src="${src(head.blob)}"`:""}>
+    sum.innerHTML=`${head?`<img class="thumb" alt="" src="${src(head.blob)}">`:`<span class="thumb empty" aria-hidden="true">写真なし</span>`}
       <span class="meta"><span class="when">${fmtShort(new Date(r.ts))}${byOther?`<span class="from">${esc(r.srcName)}</span>`:""}</span>
       <span class="sub">${esc(r.product||"製品名なし")} ／ ${esc(areaTxt)}${r.sev?" ／ "+SEV[r.sev]:""}</span></span>`;
     d.appendChild(sum);
@@ -1356,7 +1418,7 @@ function openEditSheet(r){
         <div id="eIngHits" class="ingHits hide"></div></div>
       <div class="field"><div class="lbl">気になる食材</div>
         <div class="tagbox" id="eTags"></div>
-        <input type="text" id="eTagFree" placeholder="ほかにあれば入力して確定"></div>
+        <div class="freeTagRow"><input type="text" id="eTagFree" placeholder="一覧にない食材を入力"><button type="button" id="eTagAdd">追加</button></div></div>
       <div class="field"><div class="flab"><b>出た場所</b><span class="rulehint">あてはまるものぜんぶ</span></div>
         <div class="checks" id="eAreas" role="group" aria-label="出た場所"></div></div>
       <div class="field"><div class="flab"><b>強さ</b><span class="rulehint">1つだけ・押し直しで解除</span></div>
@@ -1369,7 +1431,7 @@ function openEditSheet(r){
   const paintEditTags=()=>renderTagChips($("#eTags"),sel,null,ref);
   const paintEditIng=()=>renderIngredientHits($("#eIngText").value,$("#eIngHits"),sel);
   paintEditTags(); paintEditIng();
-  bindFreeTag($("#eTagFree"),sel,$("#eTags"),null,ref);
+  $("#eTagAdd").onclick=bindFreeTag($("#eTagFree"),sel,$("#eTags"),null,ref);
   $("#eIngText").addEventListener("input",paintEditIng);
   $("#eIngHits").addEventListener("click",e=>{
     const b=e.target.closest("button"); if(!b) return;
@@ -1885,17 +1947,17 @@ function checkBackupNudge(){
     : "まだ一度もバックアップしていません。アプリを消すと記録も消えます。";
 }
 
-$("#fProduct").addEventListener("input", ()=>{ saveDraft(); updateMoreBadge(); });
-$("#fNote").addEventListener("input", ()=>{ saveDraft(); updateMoreBadge(); });
+$("#fProduct").addEventListener("input", ()=>{ saveDraft(); updateMoreBadge(); updateSaveBar(); });
+$("#fNote").addEventListener("input", ()=>{ saveDraft(); updateMoreBadge(); updateSaveBar(); });
 $("#btnOcr").addEventListener("click", readIngredientsFromPhoto);
 
-$("#fIngText").addEventListener("input", ()=>{ renderIngHits(); saveDraft(); });
+$("#fIngText").addEventListener("input", ()=>{ renderIngHits(); saveDraft(); updateSaveBar(); });
 $("#ingHits").addEventListener("click", e=>{
   const b=e.target.closest("button"); if(!b) return;
   const {hits}=scanIngredients($("#fIngText").value);
   if(b.dataset.all){ hits.forEach(t=>selTags.add(t)); }
   else if(b.dataset.t){ const t=b.dataset.t; selTags.has(t)?selTags.delete(t):selTags.add(t); }
-  paintTagBox(); renderIngHits(); saveDraft();
+  paintTagBox(); renderIngHits(); saveDraft(); updateSaveBar();
 });
 
 $("#fDevName").addEventListener("change", async ()=>{
@@ -2018,7 +2080,7 @@ async function showVersionInfo(){
   }
   $("#fDevName").value=meta.deviceName||"";
   paintTagBox();
-  bindFreeTag($("#fTagFree"), selTags, $("#tagBox"), saveDraft, tagExpand);
+  $("#btnAddTag").onclick=bindFreeTag($("#fTagFree"), selTags, $("#tagBox"), saveDraft, tagExpand);
   await restoreDraft();
   renderList(); renderTally(); paintTagBox(); paintTiles(); renderDerived();
   renderStat(); renderPersistWarn(); checkBackupNudge();
