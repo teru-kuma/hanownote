@@ -337,6 +337,12 @@ tr.safeTag td{opacity:.5}
       <button type="button" role="radio" data-min="60" aria-checked="false">1時間前</button>
       <button type="button" role="radio" data-min="120" aria-checked="false">2時間前</button>
     </div>
+    <button type="button" id="btnAteAt" class="moreTags">🗓 食べた日時を指定</button>
+    <div id="manualAteTime" class="timePick hide">
+      <div class="lbl">食べた日時</div>
+      <input type="datetime-local" id="fAteAt">
+    </div>
+    <p id="ateTimeHelp" class="timeHelp">翌日に登録するときは、ここから実際に食べた日時を入れられます。</p>
     <div class="flab"><b>出た場所</b><span class="rulehint">あてはまるものぜんぶ</span></div>
     <div class="checks" id="areaChips" role="group" aria-label="出た場所">
       <button type="button" role="checkbox" aria-checked="false">口の周り</button>
@@ -436,8 +442,8 @@ tr.safeTag td{opacity:.5}
 
 /* ============ バージョン ============ */
 /* 変更したらここと sw.js の VERSION を同じ値に上げる（README「バージョン」参照） */
-const APP_VERSION = "1.6.0";
-const APP_BUILD   = "2026-10-01";
+const APP_VERSION = "1.6.2";
+const APP_BUILD   = "2026-10-02";
 
 /* ============ 共通 ============ */
 const $ = s => document.querySelector(s);
@@ -562,7 +568,7 @@ function renderIngHits(){ renderIngredientHits($("#fIngText").value, $("#ingHits
 
 /* ============ 状態 ============ */
 const draft = { rash:[], pack:[], ing:[] };
-let ateMin=0, areas=new Set(), sev=0, selTags=new Set(), recordTimeMode="auto", recordedAt=0;
+let ateMin=0, ateTimeMode="relative", ateAt=0, areas=new Set(), sev=0, selTags=new Set(), recordTimeMode="auto", recordedAt=0;
 let records=[], db=null;
 let meta = { deviceId:null, deviceName:"", clock:0, lastExportClock:0, lastFullExport:0,
   pending:null, peers:{}, safe:[], followDone:[], followSnooze:{} };
@@ -998,6 +1004,21 @@ function syncTimeMode(){
   renderDerived(); updateSaveBar();
 }
 
+function syncAteTime(){
+  $("#manualAteTime").classList.toggle("hide",ateTimeMode!=="manual");
+  if(ateTimeMode==="manual" && !ateAt){
+    ateAt=draftBase().ts-ateMin*60000;
+    $("#fAteAt").value=localDateTimeValue(ateAt);
+  }
+  $("#btnAteAt").textContent=ateTimeMode==="manual" ? "← 前後の時間で選ぶ" : "🗓 食べた日時を指定";
+  $("#ateTimeHelp").textContent=ateTimeMode==="manual"
+    ? "実際に食べた日時を指定しています。"
+    : "翌日に登録するときは、ここから実際に食べた日時を入れられます。";
+}
+function selectedAteTs(recordedTs){
+  return ateTimeMode==="manual" && ateAt ? ateAt : recordedTs-ateMin*60000;
+}
+
 $("#timeMode").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
   recordTimeMode=b.dataset.mode; syncTimeMode(); saveDraft();
@@ -1007,13 +1028,22 @@ $("#fRecordedAt").addEventListener("input",()=>{
   if(!isNaN(t)) recordedAt=t;
   renderDerived(); updateSaveBar(); saveDraft();
 });
+$("#btnAteAt").addEventListener("click",()=>{
+  ateTimeMode=ateTimeMode==="manual" ? "relative" : "manual";
+  syncAteTime(); saveDraft();
+});
+$("#fAteAt").addEventListener("input",()=>{
+  const t=new Date($("#fAteAt").value).getTime();
+  if(!isNaN(t)) ateAt=t;
+  saveDraft();
+});
 
 /* ============ チップ ============ */
 /* 1つだけ選ぶ（解除できない） */
 $("#ateChips").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
   [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-checked","false"));
-  b.setAttribute("aria-checked","true"); ateMin=+b.dataset.min; saveDraft();
+  b.setAttribute("aria-checked","true"); ateMin=+b.dataset.min; ateTimeMode="relative"; syncAteTime(); saveDraft();
 });
 /* いくつでも選ぶ */
 $("#areaChips").addEventListener("click",e=>{
@@ -1043,7 +1073,7 @@ function saveDraft(){
         && !$("#fProduct").value.trim() && !$("#fNote").value.trim() && !$("#fIngText").value.trim();
       if(empty){ await idbReq(st("meta","readwrite").delete("draft")); return; }
       await idbReq(st("meta","readwrite").put({k:"draft", v:{
-        at:Date.now(), ateMin, sev, areas:[...areas], tags:[...selTags], recordTimeMode, recordedAt,
+        at:Date.now(), ateMin, ateTimeMode, ateAt, sev, areas:[...areas], tags:[...selTags], recordTimeMode, recordedAt,
         product:$("#fProduct").value, note:$("#fNote").value, ingText:$("#fIngText").value,
         photos:{rash:draft.rash,pack:draft.pack,ing:draft.ing}
       }}));
@@ -1060,7 +1090,7 @@ async function restoreDraft(){
   if(!d||!d.v) return;
   const v=d.v;
   draft.rash=v.photos.rash||[]; draft.pack=v.photos.pack||[]; draft.ing=v.photos.ing||[];
-  ateMin=v.ateMin||0; sev=v.sev||0;
+  ateMin=v.ateMin||0; ateTimeMode=v.ateTimeMode||"relative"; ateAt=v.ateAt||0; sev=v.sev||0;
   recordTimeMode=v.recordTimeMode||"auto"; recordedAt=v.recordedAt||0;
   areas=new Set(v.areas||[]); selTags=new Set(v.tags||[]);
   $("#fProduct").value=v.product||""; $("#fNote").value=v.note||"";
@@ -1069,7 +1099,9 @@ async function restoreDraft(){
   [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-checked", areas.has(c.textContent)?"true":"false"));
   [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-checked", (+c.dataset.sev===sev)?"true":"false"));
   if(recordedAt) $("#fRecordedAt").value=localDateTimeValue(recordedAt);
+  if(ateAt) $("#fAteAt").value=localDateTimeValue(ateAt);
   syncTimeMode();
+  syncAteTime();
   updateMoreBadge();
   const bar=$("#draftBar");
   bar.classList.remove("hide");
@@ -1092,7 +1124,7 @@ $("#btnSave").onclick = async ()=>{
   const base=draftBase(), now=base.ts;
   const rec = {
     id:newId("r"), dev:meta.deviceId, rev:bump(), deleted:false, dph:[],
-    ts:now, ateTs:now-ateMin*60000, tz:Intl.DateTimeFormat().resolvedOptions().timeZone||"",
+    ts:now, ateTs:selectedAteTs(now), tz:Intl.DateTimeFormat().resolvedOptions().timeZone||"",
     areas:[...areas], sev,
     product:$("#fProduct").value.trim(),
     tags:[...selTags],
@@ -1108,14 +1140,14 @@ $("#btnSave").onclick = async ()=>{
 };
 function resetDraft(){
   draft.rash=[];draft.pack=[];draft.ing=[];
-  ateMin=0;areas.clear();sev=0;selTags.clear();recordTimeMode="auto";recordedAt=0;
+  ateMin=0;ateTimeMode="relative";ateAt=0;areas.clear();sev=0;selTags.clear();recordTimeMode="auto";recordedAt=0;
   $("#fProduct").value="";$("#fTagFree").value="";$("#fNote").value="";
   $("#fIngText").value=""; $("#ingHits").className="ingHits hide"; $("#ingHits").innerHTML="";
   paintTagBox();
   [...$("#ateChips").children].forEach((c,i)=>c.setAttribute("aria-checked",i===0?"true":"false"));
   [...$("#areaChips").children].forEach(c=>c.setAttribute("aria-checked","false"));
   [...$("#sevChips").children].forEach(c=>c.setAttribute("aria-checked","false"));
-  syncTimeMode(); paintTiles(); renderDerived(); updateMoreBadge();
+  syncTimeMode(); syncAteTime(); paintTiles(); renderDerived(); updateMoreBadge();
 }
 
 /* ============ 一覧 ============ */
@@ -1148,6 +1180,7 @@ function renderList(){
     const lag=Math.round((r.ts-r.ateTs)/60000);
     const info=document.createElement("div");
     info.innerHTML=`<p class="kv"><b>記録</b> ${fmt(new Date(r.ts))}</p>
+      <p class="kv"><b>食べた日時</b> ${fmt(new Date(r.ateTs))}</p>
       <p class="kv"><b>食べてから</b> 約${lag}分後に気づいた</p>
       ${r.tags.length?`<p class="kv"><b>食材</b> ${r.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</p>`:""}
       ${r.note?`<p class="kv"><b>メモ</b> ${esc(r.note)}</p>`:""}`;
@@ -2079,7 +2112,7 @@ async function showVersionInfo(){
     meta.deviceId=meta.deviceId||"tmp0";
   }
   $("#fDevName").value=meta.deviceName||"";
-  paintTagBox();
+  paintTagBox(); syncAteTime();
   $("#btnAddTag").onclick=bindFreeTag($("#fTagFree"), selTags, $("#tagBox"), saveDraft, tagExpand);
   await restoreDraft();
   renderList(); renderTally(); paintTagBox(); paintTiles(); renderDerived();

@@ -1,5 +1,5 @@
 /* 変更したら index.html の APP_VERSION と同じ値に上げる（README「バージョン」参照） */
-const VERSION = "1.6.0";
+const VERSION = "1.6.2";
 const CACHE = "kuchi-log-" + VERSION;
 const ASSETS = [
   "./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
@@ -22,6 +22,18 @@ self.addEventListener("message", e => {
 });
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
+  // 画面本体はオンラインなら毎回最新を取りにいく。古い画面を優先すると、
+  // 新しい Service Worker を登録する JavaScript 自体が読み込まれず更新できない。
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const copy = res.clone();
+        caches.open(CACHE).then(c => c.put("./index.html", copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(e.request).then(hit => hit || caches.match("./index.html")))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       const copy = res.clone();
